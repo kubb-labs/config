@@ -15,24 +15,6 @@ This skill provides comprehensive guidelines for code style, testing, and pull r
 - **Versioning**: Changesets for versioning and publishing
 - **CI/CD**: GitHub Actions
 
-## Setup Commands
-
-```bash
-pnpm install                # Install dependencies
-pnpm clean                  # Clean build artifacts
-pnpm build                  # Build all packages
-pnpm generate               # Generate code from OpenAPI specs
-pnpm perf                   # Run performance tests
-pnpm test                   # Run tests
-pnpm typecheck              # Type check all packages
-pnpm typecheck:examples     # Type check examples
-pnpm format                 # Format code
-pnpm lint                   # Lint code
-pnpm lint:fix               # Lint and fix issues
-pnpm changeset              # Create changelog entry
-pnpm run upgrade && pnpm i  # Upgrade dependencies
-```
-
 ## Code Style Guidelines
 
 ### Basic Style Rules
