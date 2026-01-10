@@ -1,9 +1,9 @@
 ---
-name: kubb-code-style
+name: code-style
 description: Code style, testing, and PR guidelines for the Kubb repository. Use when writing or reviewing code for Kubb projects.
 ---
 
-# Kubb Code Style and Testing Skill
+# Code Style and Testing Skill
 
 This skill provides comprehensive guidelines for code style, testing, and pull requests in the Kubb repository.
 

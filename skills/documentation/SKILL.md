@@ -1,9 +1,9 @@
 ---
-name: kubb-documentation
+name: documentation
 description: Guidelines for creating and maintaining Kubb documentation. Use when working on documentation in the Kubb project (Markdown/MDX with VitePress).
 ---
 
-# Kubb Documentation Skill
+# Documentation Skill
 
 This skill provides comprehensive guidelines for AI coding assistants working on Kubb documentation.
 

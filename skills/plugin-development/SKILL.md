@@ -1,9 +1,9 @@
 ---
-name: kubb-plugin-development
+name: plugin-development
 description: Guidelines for developing Kubb plugins. Use when creating or modifying Kubb plugins and understanding the plugin architecture.
 ---
 
-# Kubb Plugin Development Skill
+# Plugin Development Skill
 
 This skill provides comprehensive guidelines for developing plugins in the Kubb ecosystem.
 

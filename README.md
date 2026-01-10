@@ -19,18 +19,15 @@ See [skills/README.md](./skills/README.md) for detailed information about each s
 
 ## Using the Skills
 
-### With Claude Code
+### With GitHub Copilot
 
-```bash
-/plugin marketplace add kubb-labs/config
-/plugin install kubb-skills@kubb-labs-config
-```
+GitHub Copilot can access these skills when configured to use this repository as a knowledge source.
 
 ### With OpenSkills
 
 ```bash
-openskills install kubb-labs/config/skills/kubb-documentation
-openskills install kubb-labs/config/skills/kubb-plugin-development
+openskills install kubb-labs/config/skills/documentation
+openskills install kubb-labs/config/skills/plugin-development
 # ... install other skills as needed
 ```
 

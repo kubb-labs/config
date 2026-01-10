@@ -1,9 +1,9 @@
 ---
-name: kubb-openapi
+name: openapi
 description: Guidelines for working with OpenAPI specifications in Kubb. Use when dealing with OpenAPI schemas, operations, and code generation from API specs.
 ---
 
-# Kubb OpenAPI Skill
+# OpenAPI Skill
 
 This skill provides guidelines for working with OpenAPI specifications in the Kubb ecosystem.
 

@@ -1,9 +1,9 @@
 ---
-name: kubb-react-components
+name: react-components
 description: Guidelines for creating React components with @kubb/react-fabric. Use when building code generation components for Kubb plugins.
 ---
 
-# Kubb React Components Skill
+# React Components Skill
 
 This skill provides guidelines for creating React components using `@kubb/react-fabric` for code generation in Kubb plugins.
 

@@ -1,9 +1,9 @@
 ---
-name: kubb-changelog
+name: changelog
 description: Guidelines for maintaining changelog and version management in Kubb. Use when updating changelog, creating changesets, or managing releases.
 ---
 
-# Kubb Changelog and Versioning Skill
+# Changelog and Versioning Skill
 
 This skill provides guidelines for maintaining the changelog and managing versions in the Kubb repository.
 

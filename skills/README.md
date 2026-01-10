@@ -6,15 +6,15 @@ This directory contains skills for AI coding assistants working with the Kubb ec
 
 ### Documentation & Style
 
-- **[kubb-documentation](./kubb-documentation/)** - Guidelines for creating and maintaining Kubb documentation (Markdown/MDX with VitePress)
-- **[kubb-code-style](./kubb-code-style/)** - Code style, testing, and PR guidelines for the Kubb repository
-- **[kubb-changelog](./kubb-changelog/)** - Changelog maintenance and version management with Changesets
+- **[documentation](./documentation/)** - Guidelines for creating and maintaining Kubb documentation (Markdown/MDX with VitePress)
+- **[code-style](./code-style/)** - Code style, testing, and PR guidelines for the Kubb repository
+- **[changelog](./changelog/)** - Changelog maintenance and version management with Changesets
 
 ### Plugin Development
 
-- **[kubb-plugin-development](./kubb-plugin-development/)** - Guidelines for developing Kubb plugins and understanding the plugin architecture
-- **[kubb-react-components](./kubb-react-components/)** - Creating React components with @kubb/react-fabric for code generation
-- **[kubb-openapi](./kubb-openapi/)** - Working with OpenAPI specifications, schemas, and operations in Kubb
+- **[plugin-development](./plugin-development/)** - Guidelines for developing Kubb plugins and understanding the plugin architecture
+- **[react-components](./react-components/)** - Creating React components with @kubb/react-fabric for code generation
+- **[openapi](./openapi/)** - Working with OpenAPI specifications, schemas, and operations in Kubb
 
 ## Skill Format
 
@@ -33,33 +33,23 @@ Instructions and guidelines...
 
 ## Using Skills
 
-### With Claude Code
+### With GitHub Copilot
 
-Install via plugin marketplace:
-
-```bash
-/plugin marketplace add kubb-labs/config
-```
-
-Then install skills:
-
-```bash
-/plugin install kubb-skills@kubb-labs-config
-```
+GitHub Copilot can access these skills when configured to use this repository as a knowledge source.
 
 ### With OpenSkills CLI
 
 Install individual skills:
 
 ```bash
-openskills install kubb-labs/config/skills/kubb-documentation
-openskills install kubb-labs/config/skills/kubb-plugin-development
+openskills install kubb-labs/config/skills/documentation
+openskills install kubb-labs/config/skills/plugin-development
 ```
 
 Or install from local directory:
 
 ```bash
-openskills install ./skills/kubb-documentation
+openskills install ./skills/documentation
 ```
 
 ### Manual Usage
@@ -74,12 +64,12 @@ Each skill can be read directly and used as reference:
 
 | Skill | Use When |
 |-------|----------|
-| kubb-documentation | Working on documentation files in the Kubb project |
-| kubb-code-style | Writing or reviewing code for Kubb projects |
-| kubb-changelog | Updating changelog, creating changesets, or managing releases |
-| kubb-plugin-development | Creating or modifying Kubb plugins |
-| kubb-react-components | Building code generation components with @kubb/react-fabric |
-| kubb-openapi | Dealing with OpenAPI schemas and operations |
+| documentation | Working on documentation files in the Kubb project |
+| code-style | Writing or reviewing code for Kubb projects |
+| changelog | Updating changelog, creating changesets, or managing releases |
+| plugin-development | Creating or modifying Kubb plugins |
+| react-components | Building code generation components with @kubb/react-fabric |
+| openapi | Dealing with OpenAPI schemas and operations |
 
 ## Skill Structure
 
