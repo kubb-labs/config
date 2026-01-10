@@ -8,6 +8,7 @@ This repository contains configuration files and AI coding assistant skills for 
 
 The `skills/` directory contains AI coding assistant skills following the [Anthropic Skills](https://github.com/anthropics/skills) format. These skills provide comprehensive guidelines for working with Kubb:
 
+- **Kubb Config** - Setting up kubb.config.ts for API code generation
 - **Documentation** - VitePress documentation standards
 - **Code Style** - TypeScript conventions and testing guidelines
 - **Changelog** - Version management with Changesets

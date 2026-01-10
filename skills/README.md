@@ -4,6 +4,10 @@ This directory contains skills for AI coding assistants working with the Kubb ec
 
 ## Available Skills
 
+### Configuration
+
+- **[kubb-config](./kubb-config/)** - Set up and configure kubb.config.ts for API code generation
+
 ### Documentation & Style
 
 - **[documentation](./documentation/)** - Guidelines for creating and maintaining Kubb documentation (Markdown/MDX with VitePress)
@@ -63,7 +67,9 @@ Each skill can be read directly and used as reference:
 ## When to Use Each Skill
 
 | Skill | Use When |
+| Skill | Use When |
 |-------|----------|
+| kubb-config | Setting up or modifying kubb.config.ts configuration |
 | documentation | Working on documentation files in the Kubb project |
 | code-style | Writing or reviewing code for Kubb projects |
 | changelog | Updating changelog, creating changesets, or managing releases |
