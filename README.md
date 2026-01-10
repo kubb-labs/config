@@ -6,14 +6,14 @@ This repository contains configuration files and AI coding assistant skills for 
 
 ### Skills
 
-The `skills/` directory contains AI coding assistant skills following the [Anthropic Skills](https://github.com/anthropics/skills) format, organized into two categories:
+This repository provides two types of AI coding assistant skills following the [Anthropic Skills](https://github.com/anthropics/skills) format:
 
-**Generic Skills** (reusable across projects):
+**Generic Skills** (in `skills/` directory - reusable across projects):
 - **Documentation** - VitePress documentation standards
 - **Code Style** - TypeScript conventions and testing guidelines
 - **Changelog** - Version management with Changesets
 
-**Kubb-Specific Skills** (in `skills/kubbSkills/`):
+**Kubb-Specific Skills** (in `kubb-skills/` directory):
 - **Kubb Config** - Setting up kubb.config.ts for API code generation
 - **Plugin Development** - Plugin architecture and patterns
 - **React Components** - Code generation with @kubb/react-fabric
@@ -30,20 +30,20 @@ GitHub Copilot can access these skills when configured to use this repository as
 ### With OpenSkills
 
 Generic skills:
-```bash
+\`\`\`bash
 openskills install kubb-labs/config/skills/documentation
 openskills install kubb-labs/config/skills/code-style
-```
+\`\`\`
 
 Kubb-specific skills:
-```bash
-openskills install kubb-labs/config/skills/kubbSkills/kubb-config
-openskills install kubb-labs/config/skills/kubbSkills/plugin-development
-```
+\`\`\`bash
+openskills install kubb-labs/config/kubb-skills/kubb-config
+openskills install kubb-labs/config/kubb-skills/plugin-development
+\`\`\`
 
 ### Manual
 
-Browse the [skills](./skills/) directory and reference the SKILL.md files directly.
+Browse the [skills](./skills/) and [kubb-skills](./kubb-skills/) directories and reference the SKILL.md files directly.
 
 ## About Kubb
 

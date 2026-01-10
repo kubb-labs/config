@@ -1,25 +1,23 @@
 # Skills Repository
 
-This directory contains skills for AI coding assistants. Skills are organized into two categories: **generic reusable skills** and **Kubb-specific skills**.
+This directory contains generic AI coding assistant skills that are framework-agnostic and can be used in any project.
 
-## Available Skills
+For Kubb-specific skills, see the [`kubb-skills/`](../kubb-skills/) directory in the repository root.
 
-### Generic Skills (Reusable Across Projects)
-
-These skills are framework-agnostic and can be used in any project:
+## Available Generic Skills
 
 - **[documentation](./documentation/)** - VitePress documentation standards (Markdown/MDX)
 - **[code-style](./code-style/)** - TypeScript conventions, testing, and PR guidelines
 - **[changelog](./changelog/)** - Changelog maintenance and version management with Changesets
 
-### Kubb-Specific Skills
+## Kubb-Specific Skills
 
-These skills are specific to Kubb and its ecosystem (in `kubbSkills/` folder):
+Kubb-specific skills are located in the [`kubb-skills/`](../kubb-skills/) directory:
 
-- **[kubb-config](./kubbSkills/kubb-config/)** - Set up and configure kubb.config.ts for API code generation
-- **[plugin-development](./kubbSkills/plugin-development/)** - Guidelines for developing Kubb plugins
-- **[react-components](./kubbSkills/react-components/)** - Creating React components with @kubb/react-fabric
-- **[openapi](./kubbSkills/openapi/)** - Working with OpenAPI specifications in Kubb
+- **[kubb-config](../kubb-skills/kubb-config/)** - Set up and configure kubb.config.ts for API code generation
+- **[plugin-development](../kubb-skills/plugin-development/)** - Guidelines for developing Kubb plugins
+- **[react-components](../kubb-skills/react-components/)** - Creating React components with @kubb/react-fabric
+- **[openapi](../kubb-skills/openapi/)** - Working with OpenAPI specifications in Kubb
 
 ## Skill Format
 
@@ -52,8 +50,8 @@ openskills install kubb-labs/config/skills/code-style
 
 Install Kubb-specific skills:
 \`\`\`bash
-openskills install kubb-labs/config/skills/kubbSkills/kubb-config
-openskills install kubb-labs/config/skills/kubbSkills/plugin-development
+openskills install kubb-labs/config/kubb-skills/kubb-config
+openskills install kubb-labs/config/kubb-skills/plugin-development
 \`\`\`
 
 ### Manual Usage
@@ -96,7 +94,7 @@ skill-name/
 When adding new skills:
 
 1. Determine if the skill is generic or Kubb-specific
-2. Create directory under \`skills/\` (generic) or \`skills/kubbSkills/\` (Kubb-specific)
+2. Create directory under \`skills/\` (generic) or \`kubb-skills/\` (Kubb-specific)
 3. Add a \`SKILL.md\` file with YAML frontmatter
 4. Follow the existing skill format and structure
 5. Keep instructions clear, concise, and actionable
