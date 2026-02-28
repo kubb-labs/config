@@ -1,6 +1,11 @@
 name: Setup
 description: Action that sets up Node, pnpm, and caching
 
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    default: '20.x'
+
 runs:
   using: composite
   steps:
@@ -13,7 +18,7 @@ runs:
     - name: Setup Node.js environment
       uses: actions/setup-node@v6
       with:
-        node-version: 20.x
+        node-version: ${{ inputs.node-version }}
         # cache: "pnpm"
         package-manager-cache: false
         registry-url: 'https://registry.npmjs.org'
@@ -40,13 +45,13 @@ runs:
       name: Setup pnpm cache
       with:
         path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        key: ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
         restore-keys: |
-          ${{ runner.os }}-pnpm-store-
+          ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-store-
 
     - name: Install dependencies
       shell: bash
-      run: pnpm install --frozen-lockfile
+      run: pnpm install --frozen-lockfile --prefer-offline
 
     - name: Setup Turbo cache
       uses: rharkor/caching-for-turbo@v2.3.5
