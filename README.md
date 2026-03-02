@@ -10,7 +10,7 @@ A composite action that sets up the standard Kubb development environment:
 
 - [pnpm](https://pnpm.io/) package manager
 - [Bun](https://bun.sh/) runtime
-- [Node.js](https://nodejs.org/) (default: `20.x`)
+- [Node.js](https://nodejs.org/) (default: `22.x`)
 - Git user configuration
 - pnpm store cache
 - [Turbo](https://turbo.build/) remote cache
@@ -19,7 +19,7 @@ A composite action that sets up the standard Kubb development environment:
 
 | Input | Description | Default |
 |-------|-------------|---------|
-| `node-version` | Node.js version to use | `20.x` |
+| `node-version` | Node.js version to use | `22.x` |
 
 #### Usage
 
@@ -46,7 +46,7 @@ jobs:
 
       - uses: kubb-labs/config/.github/setup@main
         with:
-          node-version: '22.x'
+          node-version: '24.x'
 
       - run: pnpm build
 ```
