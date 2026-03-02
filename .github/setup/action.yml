@@ -1,10 +1,12 @@
 name: Setup
-description: Action that sets up Node, pnpm, and caching
+description: Action that sets up Node, pnpm, and caching with support for Node 22/24
 
 inputs:
   node-version:
-    description: 'Node.js version to use'
+    description: 'Node.js version to use (e.g., 22, 24, or 22.x)'
     required: true
+    # We leave 'default' empty or omit it so the calling workflow 
+    # is forced to provide the version it actually needs.
 
 runs:
   using: composite
@@ -20,32 +22,14 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
         registry-url: 'https://registry.npmjs.org'
-
-    #    - name: Install safe chain
-    #      shell: bash
-    #      run: |
-    #        npm i -g @aikidosec/safe-chain
-    #        safe-chain setup-ci
+        # This built-in cache handles the store path logic automatically
+        cache: 'pnpm'
 
     - name: Setup Git User
       shell: bash
       run: |
         git config --global user.email "stijn@stijnvanhulle.be"
         git config --global user.name "Stijn Van Hulle"
-
-    - name: Get pnpm store directory
-      shell: bash
-      id: pnpm-cache
-      run: |
-        echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-    - uses: actions/cache@v4
-      name: Setup pnpm cache
-      with:
-        path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-        key: ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-node-${{ inputs.node-version }}-pnpm-store-
 
     - name: Install dependencies
       shell: bash
@@ -55,10 +39,4 @@ runs:
       uses: rharkor/caching-for-turbo@v2.3.5
       continue-on-error: true
       with:
-        # Set the prefix for the cache keys.
         cache-prefix: kubb_
-
-    # - name: Get base and head commits for `nx affected`
-    #   uses: nrwl/nx-set-shas@v4.1.2
-    #   with:
-    #     main-branch-name: main
