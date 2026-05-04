@@ -35,6 +35,13 @@ runs:
       shell: bash
       run: pnpm install --frozen-lockfile --prefer-offline
 
+    - name: Install RTK
+      shell: bash
+      run: |
+        curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+        "$HOME/.local/bin/rtk" --version
+
     - name: Setup Turbo cache
       uses: rharkor/caching-for-turbo@v2.3.5
       continue-on-error: true
