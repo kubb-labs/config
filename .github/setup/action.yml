@@ -35,12 +35,26 @@ runs:
       shell: bash
       run: pnpm install --frozen-lockfile --prefer-offline
 
-    - name: Install RTK
+    - name: Install RTK (Linux/macOS)
+      if: runner.os != 'Windows'
       shell: bash
       run: |
         curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
         echo "$HOME/.local/bin" >> "$GITHUB_PATH"
         "$HOME/.local/bin/rtk" --version
+
+    - name: Install RTK (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $Version = (Invoke-RestMethod "https://api.github.com/repos/rtk-ai/rtk/releases/latest").tag_name
+        $Url = "https://github.com/rtk-ai/rtk/releases/download/$Version/rtk-x86_64-pc-windows-msvc.zip"
+        $InstallDir = "$env:USERPROFILE\.local\bin"
+        New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+        Invoke-WebRequest -Uri $Url -OutFile "$env:TEMP\rtk.zip"
+        Expand-Archive -Path "$env:TEMP\rtk.zip" -DestinationPath $InstallDir -Force
+        Add-Content -Path $env:GITHUB_PATH -Value $InstallDir
+        & "$InstallDir\rtk.exe" --version
 
     - name: Setup Turbo cache
       uses: rharkor/caching-for-turbo@v2.3.5
