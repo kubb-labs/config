@@ -61,7 +61,7 @@ runs:
         & "$InstallDir\rtk.exe" --version
 
     - name: Setup Turbo cache
-      if: ${{ inputs.cache == 'turbo' }}
+      if: ${{ !inputs.cache || inputs.cache == 'turbo' }}
       uses: rharkor/caching-for-turbo@v2.3.5
       continue-on-error: true
       with:
