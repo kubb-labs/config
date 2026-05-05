@@ -20,6 +20,7 @@ A composite action that sets up the standard Kubb development environment:
 | Input | Description | Default |
 |-------|-------------|---------|
 | `node-version` | Node.js version to use | `22.x` |
+| `cache` | Cache/build tool: `turbo` or `moon` | `turbo` |
 
 #### Usage
 
@@ -49,6 +50,22 @@ jobs:
           node-version: '24.x'
 
       - run: pnpm build
+```
+
+##### Using moon instead of Turbo
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: kubb-labs/config/.github/setup@main
+        with:
+          cache: moon
+
+      - run: moon ci
 ```
 
 ## License

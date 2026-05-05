@@ -5,8 +5,12 @@ inputs:
   node-version:
     description: 'Node.js version to use (e.g., 22, 24, or 22.x)'
     required: true
-    # We leave 'default' empty or omit it so the calling workflow 
+    # We leave 'default' empty or omit it so the calling workflow
     # is forced to provide the version it actually needs.
+  cache:
+    description: 'Cache/build tool to use: "turbo" (default) or "moon"'
+    required: false
+    default: 'turbo'
 
 runs:
   using: composite
@@ -57,7 +61,14 @@ runs:
         & "$InstallDir\rtk.exe" --version
 
     - name: Setup Turbo cache
+      if: ${{ inputs.cache == 'turbo' }}
       uses: rharkor/caching-for-turbo@v2.3.5
       continue-on-error: true
       with:
         cache-prefix: kubb_
+
+    - name: Setup moon toolchain
+      if: ${{ inputs.cache == 'moon' }}
+      uses: moonrepo/setup-toolchain@v0
+      with:
+        auto-install: true
