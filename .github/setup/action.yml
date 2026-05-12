@@ -11,10 +11,6 @@ inputs:
     description: 'Cache/build tool to use: "turbo" (default) or "moon"'
     required: false
     default: 'turbo'
-  rtk-version:
-    description: 'RTK version to install (e.g., v0.39.0). Pin this to a specific release.'
-    required: false
-    default: 'v0.39.0'
 
 runs:
   using: composite
@@ -50,84 +46,7 @@ runs:
     - name: Install dependencies
       shell: bash
       run: pnpm install --frozen-lockfile --prefer-offline
-
-    # Pin RTK to an immutable release version and verify the downloaded archive
-    # against the release checksums before executing anything from it.
-    - name: Install RTK (Linux/macOS)
-      if: runner.os != 'Windows'
-      shell: bash
-      run: |
-        RTK_VERSION="${{ inputs.rtk-version }}"
-        ARCH="$(uname -m)"
-        OS="$(uname -s)"
-
-        case "${OS}-${ARCH}" in
-          Linux-x86_64)   ASSET="rtk-x86_64-unknown-linux-musl.tar.gz" ;;
-          Linux-aarch64)  ASSET="rtk-aarch64-unknown-linux-gnu.tar.gz" ;;
-          Darwin-x86_64)  ASSET="rtk-x86_64-apple-darwin.tar.gz" ;;
-          Darwin-arm64)   ASSET="rtk-aarch64-apple-darwin.tar.gz" ;;
-          *) echo "Unsupported platform: ${OS}-${ARCH}" && exit 1 ;;
-        esac
-
-        BASE_URL="https://github.com/rtk-ai/rtk/releases/download/${RTK_VERSION}"
-        curl -fsSL "${BASE_URL}/${ASSET}"        -o /tmp/rtk.tar.gz
-        curl -fsSL "${BASE_URL}/checksums.txt"   -o /tmp/rtk-checksums.txt
-
-        # Verify checksum before extracting
-        cd /tmp
-        if ! grep -q "${ASSET}" rtk-checksums.txt; then
-          echo "ERROR: No checksum entry found for '${ASSET}' in checksums.txt" >&2
-          exit 1
-        fi
-        echo "Verifying SHA-256 checksum for ${ASSET}..."
-        if command -v sha256sum >/dev/null 2>&1; then
-          grep "${ASSET}" rtk-checksums.txt | sha256sum --check --status || \
-            { echo "ERROR: SHA-256 hash mismatch for ${ASSET} — archive may be corrupted or tampered" >&2; exit 1; }
-        else
-          grep "${ASSET}" rtk-checksums.txt | shasum -a 256 --check --status || \
-            { echo "ERROR: SHA-256 hash mismatch for ${ASSET} — archive may be corrupted or tampered" >&2; exit 1; }
-        fi
-
-        mkdir -p "$HOME/.local/bin"
-        tar -xzf /tmp/rtk.tar.gz -C "$HOME/.local/bin"
-        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-        "$HOME/.local/bin/rtk" --version
-
-    - name: Install RTK (Windows)
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: |
-        $Version = "${{ inputs.rtk-version }}"
-        $AssetName = "rtk-x86_64-pc-windows-msvc.zip"
-        $Url = "https://github.com/rtk-ai/rtk/releases/download/$Version/$AssetName"
-        $ChecksumsUrl = "https://github.com/rtk-ai/rtk/releases/download/$Version/checksums.txt"
-        $InstallDir = "$env:USERPROFILE\.local\bin"
-        New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
-        Invoke-WebRequest -Uri $Url -OutFile "$env:TEMP\rtk.zip"
-        Invoke-WebRequest -Uri $ChecksumsUrl -OutFile "$env:TEMP\rtk-checksums.txt"
-
-        # Verify checksum before extracting
-        $Match = Select-String -Path "$env:TEMP\rtk-checksums.txt" -Pattern ([regex]::Escape($AssetName))
-        if (-not $Match) {
-          Write-Error "ERROR: No checksum entry found for '$AssetName' in checksums.txt"
-          exit 1
-        }
-        $Parts = $Match.Line.Split(" ", [System.StringSplitOptions]::RemoveEmptyEntries)
-        if ($Parts.Count -lt 1 -or -not $Parts[0]) {
-          Write-Error "ERROR: Could not parse expected hash from checksums.txt (expected format: '<hash>  $AssetName')"
-          exit 1
-        }
-        $ExpectedHash = $Parts[0].ToUpper()
-        $ActualHash = (Get-FileHash "$env:TEMP\rtk.zip" -Algorithm SHA256).Hash
-        if ($ExpectedHash -ne $ActualHash) {
-          Write-Error "ERROR: Checksum mismatch for $AssetName — archive may be corrupted or tampered (expected $ExpectedHash, got $ActualHash)"
-          exit 1
-        }
-
-        Expand-Archive -Path "$env:TEMP\rtk.zip" -DestinationPath $InstallDir -Force
-        Add-Content -Path $env:GITHUB_PATH -Value $InstallDir
-        & "$InstallDir\rtk.exe" --version
-
+      
     - name: Setup Turbo cache
       if: ${{ inputs.cache == 'turbo' }}
       uses: rharkor/caching-for-turbo@cda201ff2b32699a2ae9f59704db029e3dde4fbd # v2.3.5
