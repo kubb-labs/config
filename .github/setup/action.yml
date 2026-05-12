@@ -15,14 +15,22 @@ inputs:
 runs:
   using: composite
   steps:
+    # Monitors outbound network calls and detects OIDC token exfiltration attempts.
+    # Supported on GitHub-hosted Linux runners only.
+    - name: Harden runner
+      if: runner.os == 'Linux'
+      uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2.19.1
+      with:
+        egress-policy: audit
+
     - name: Setup pnpm
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
 
     - name: Install bun
-      uses: oven-sh/setup-bun@v2
+      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
 
     - name: Setup Node.js environment
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
       with:
         node-version: ${{ inputs.node-version }}
         registry-url: 'https://registry.npmjs.org'
@@ -38,37 +46,16 @@ runs:
     - name: Install dependencies
       shell: bash
       run: pnpm install --frozen-lockfile --prefer-offline
-
-    - name: Install RTK (Linux/macOS)
-      if: runner.os != 'Windows'
-      shell: bash
-      run: |
-        curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
-        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-        "$HOME/.local/bin/rtk" --version
-
-    - name: Install RTK (Windows)
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: |
-        $Version = (Invoke-RestMethod "https://api.github.com/repos/rtk-ai/rtk/releases/latest").tag_name
-        $Url = "https://github.com/rtk-ai/rtk/releases/download/$Version/rtk-x86_64-pc-windows-msvc.zip"
-        $InstallDir = "$env:USERPROFILE\.local\bin"
-        New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
-        Invoke-WebRequest -Uri $Url -OutFile "$env:TEMP\rtk.zip"
-        Expand-Archive -Path "$env:TEMP\rtk.zip" -DestinationPath $InstallDir -Force
-        Add-Content -Path $env:GITHUB_PATH -Value $InstallDir
-        & "$InstallDir\rtk.exe" --version
-
+      
     - name: Setup Turbo cache
       if: ${{ inputs.cache == 'turbo' }}
-      uses: rharkor/caching-for-turbo@v2.3.5
+      uses: rharkor/caching-for-turbo@cda201ff2b32699a2ae9f59704db029e3dde4fbd # v2.3.5
       continue-on-error: true
       with:
         cache-prefix: kubb_
 
     - name: Setup moon toolchain
       if: ${{ inputs.cache == 'moon' }}
-      uses: moonrepo/setup-toolchain@v0
+      uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0
       with:
         auto-install: true
