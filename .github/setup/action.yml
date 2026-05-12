@@ -11,18 +11,30 @@ inputs:
     description: 'Cache/build tool to use: "turbo" (default) or "moon"'
     required: false
     default: 'turbo'
+  rtk-version:
+    description: 'RTK version to install (e.g., v0.39.0). Pin this to a specific release.'
+    required: false
+    default: 'v0.39.0'
 
 runs:
   using: composite
   steps:
+    # Monitors outbound network calls and detects OIDC token exfiltration attempts.
+    # Supported on GitHub-hosted Linux runners only.
+    - name: Harden runner
+      if: runner.os == 'Linux'
+      uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2.19.1
+      with:
+        egress-policy: audit
+
     - name: Setup pnpm
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
 
     - name: Install bun
-      uses: oven-sh/setup-bun@v2
+      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
 
     - name: Setup Node.js environment
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
       with:
         node-version: ${{ inputs.node-version }}
         registry-url: 'https://registry.npmjs.org'
@@ -39,11 +51,45 @@ runs:
       shell: bash
       run: pnpm install --frozen-lockfile --prefer-offline
 
+    # Pin RTK to an immutable release version and verify the downloaded archive
+    # against the release checksums before executing anything from it.
     - name: Install RTK (Linux/macOS)
       if: runner.os != 'Windows'
       shell: bash
       run: |
-        curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+        RTK_VERSION="${{ inputs.rtk-version }}"
+        ARCH="$(uname -m)"
+        OS="$(uname -s)"
+
+        case "${OS}-${ARCH}" in
+          Linux-x86_64)   ASSET="rtk-x86_64-unknown-linux-musl.tar.gz" ;;
+          Linux-aarch64)  ASSET="rtk-aarch64-unknown-linux-gnu.tar.gz" ;;
+          Darwin-x86_64)  ASSET="rtk-x86_64-apple-darwin.tar.gz" ;;
+          Darwin-arm64)   ASSET="rtk-aarch64-apple-darwin.tar.gz" ;;
+          *) echo "Unsupported platform: ${OS}-${ARCH}" && exit 1 ;;
+        esac
+
+        BASE_URL="https://github.com/rtk-ai/rtk/releases/download/${RTK_VERSION}"
+        curl -fsSL "${BASE_URL}/${ASSET}"        -o /tmp/rtk.tar.gz
+        curl -fsSL "${BASE_URL}/checksums.txt"   -o /tmp/rtk-checksums.txt
+
+        # Verify checksum before extracting
+        cd /tmp
+        if ! grep -q "${ASSET}" rtk-checksums.txt; then
+          echo "ERROR: No checksum entry found for '${ASSET}' in checksums.txt" >&2
+          exit 1
+        fi
+        echo "Verifying SHA-256 checksum for ${ASSET}..."
+        if command -v sha256sum >/dev/null 2>&1; then
+          grep "${ASSET}" rtk-checksums.txt | sha256sum --check --status || \
+            { echo "ERROR: Checksum verification failed for ${ASSET}" >&2; exit 1; }
+        else
+          grep "${ASSET}" rtk-checksums.txt | shasum -a 256 --check --status || \
+            { echo "ERROR: Checksum verification failed for ${ASSET}" >&2; exit 1; }
+        fi
+
+        mkdir -p "$HOME/.local/bin"
+        tar -xzf /tmp/rtk.tar.gz -C "$HOME/.local/bin"
         echo "$HOME/.local/bin" >> "$GITHUB_PATH"
         "$HOME/.local/bin/rtk" --version
 
@@ -51,24 +97,44 @@ runs:
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        $Version = (Invoke-RestMethod "https://api.github.com/repos/rtk-ai/rtk/releases/latest").tag_name
+        $Version = "${{ inputs.rtk-version }}"
         $Url = "https://github.com/rtk-ai/rtk/releases/download/$Version/rtk-x86_64-pc-windows-msvc.zip"
+        $ChecksumsUrl = "https://github.com/rtk-ai/rtk/releases/download/$Version/checksums.txt"
         $InstallDir = "$env:USERPROFILE\.local\bin"
         New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
         Invoke-WebRequest -Uri $Url -OutFile "$env:TEMP\rtk.zip"
+        Invoke-WebRequest -Uri $ChecksumsUrl -OutFile "$env:TEMP\rtk-checksums.txt"
+
+        # Verify checksum before extracting
+        $MatchLine = (Select-String -Path "$env:TEMP\rtk-checksums.txt" -Pattern "rtk-x86_64-pc-windows-msvc\.zip").Line
+        if (-not $MatchLine) {
+          Write-Error "ERROR: No checksum entry found for 'rtk-x86_64-pc-windows-msvc.zip' in checksums.txt"
+          exit 1
+        }
+        $ExpectedHash = $MatchLine.Split(" ", [System.StringSplitOptions]::RemoveEmptyEntries)[0].ToUpper()
+        if (-not $ExpectedHash) {
+          Write-Error "ERROR: Could not parse expected hash from checksums.txt"
+          exit 1
+        }
+        $ActualHash = (Get-FileHash "$env:TEMP\rtk.zip" -Algorithm SHA256).Hash
+        if ($ExpectedHash -ne $ActualHash) {
+          Write-Error "ERROR: Checksum mismatch for rtk-x86_64-pc-windows-msvc.zip (expected $ExpectedHash, got $ActualHash)"
+          exit 1
+        }
+
         Expand-Archive -Path "$env:TEMP\rtk.zip" -DestinationPath $InstallDir -Force
         Add-Content -Path $env:GITHUB_PATH -Value $InstallDir
         & "$InstallDir\rtk.exe" --version
 
     - name: Setup Turbo cache
       if: ${{ inputs.cache == 'turbo' }}
-      uses: rharkor/caching-for-turbo@v2.3.5
+      uses: rharkor/caching-for-turbo@cda201ff2b32699a2ae9f59704db029e3dde4fbd # v2.3.5
       continue-on-error: true
       with:
         cache-prefix: kubb_
 
     - name: Setup moon toolchain
       if: ${{ inputs.cache == 'moon' }}
-      uses: moonrepo/setup-toolchain@v0
+      uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0
       with:
         auto-install: true
