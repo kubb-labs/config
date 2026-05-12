@@ -82,10 +82,10 @@ runs:
         echo "Verifying SHA-256 checksum for ${ASSET}..."
         if command -v sha256sum >/dev/null 2>&1; then
           grep "${ASSET}" rtk-checksums.txt | sha256sum --check --status || \
-            { echo "ERROR: Checksum verification failed for ${ASSET}" >&2; exit 1; }
+            { echo "ERROR: SHA-256 hash mismatch for ${ASSET} — archive may be corrupted or tampered" >&2; exit 1; }
         else
           grep "${ASSET}" rtk-checksums.txt | shasum -a 256 --check --status || \
-            { echo "ERROR: Checksum verification failed for ${ASSET}" >&2; exit 1; }
+            { echo "ERROR: SHA-256 hash mismatch for ${ASSET} — archive may be corrupted or tampered" >&2; exit 1; }
         fi
 
         mkdir -p "$HOME/.local/bin"
@@ -98,7 +98,8 @@ runs:
       shell: pwsh
       run: |
         $Version = "${{ inputs.rtk-version }}"
-        $Url = "https://github.com/rtk-ai/rtk/releases/download/$Version/rtk-x86_64-pc-windows-msvc.zip"
+        $AssetName = "rtk-x86_64-pc-windows-msvc.zip"
+        $Url = "https://github.com/rtk-ai/rtk/releases/download/$Version/$AssetName"
         $ChecksumsUrl = "https://github.com/rtk-ai/rtk/releases/download/$Version/checksums.txt"
         $InstallDir = "$env:USERPROFILE\.local\bin"
         New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
@@ -106,19 +107,20 @@ runs:
         Invoke-WebRequest -Uri $ChecksumsUrl -OutFile "$env:TEMP\rtk-checksums.txt"
 
         # Verify checksum before extracting
-        $MatchLine = (Select-String -Path "$env:TEMP\rtk-checksums.txt" -Pattern "rtk-x86_64-pc-windows-msvc\.zip").Line
-        if (-not $MatchLine) {
-          Write-Error "ERROR: No checksum entry found for 'rtk-x86_64-pc-windows-msvc.zip' in checksums.txt"
+        $Match = Select-String -Path "$env:TEMP\rtk-checksums.txt" -Pattern ([regex]::Escape($AssetName))
+        if (-not $Match) {
+          Write-Error "ERROR: No checksum entry found for '$AssetName' in checksums.txt"
           exit 1
         }
-        $ExpectedHash = $MatchLine.Split(" ", [System.StringSplitOptions]::RemoveEmptyEntries)[0].ToUpper()
-        if (-not $ExpectedHash) {
-          Write-Error "ERROR: Could not parse expected hash from checksums.txt"
+        $Parts = $Match.Line.Split(" ", [System.StringSplitOptions]::RemoveEmptyEntries)
+        if ($Parts.Count -lt 1 -or -not $Parts[0]) {
+          Write-Error "ERROR: Could not parse expected hash from checksums.txt (expected format: '<hash>  $AssetName')"
           exit 1
         }
+        $ExpectedHash = $Parts[0].ToUpper()
         $ActualHash = (Get-FileHash "$env:TEMP\rtk.zip" -Algorithm SHA256).Hash
         if ($ExpectedHash -ne $ActualHash) {
-          Write-Error "ERROR: Checksum mismatch for rtk-x86_64-pc-windows-msvc.zip (expected $ExpectedHash, got $ActualHash)"
+          Write-Error "ERROR: Checksum mismatch for $AssetName — archive may be corrupted or tampered (expected $ExpectedHash, got $ActualHash)"
           exit 1
         }
 
