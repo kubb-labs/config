@@ -1,9 +1,4 @@
-# This repo hosts kubb-labs/config/.github/setup, the composite action that
-# runs in every workflow across kubb-labs/kubb, kubb-labs/plugins, and
-# kubb-labs/platform. A compromised commit on main here propagates to every
-# downstream repo — require owner review on every change.
-# Enforcement also requires branch protection: "Require review from Code
-# Owners" on the main branch.
+# This repo hosts kubb-labs/config/.github/setup
 
 .github/setup/      @stijnvanhulle
 .github/workflows/  @stijnvanhulle
