@@ -28,6 +28,11 @@ on:
         type: string
         required: false
         default: '22'
+      tag:
+        description: 'npm dist-tag to publish under (empty = latest). Applied in publish mode.'
+        type: string
+        required: false
+        default: ''
       publish:
         description: 'Command run in publish mode (promotes to npm latest)'
         type: string
@@ -129,6 +134,27 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+      - name: Resolve release command
+        id: cmd
+        shell: bash
+        # In publish mode, append `-- --tag <tag>` so the dist-tag flows through
+        # pnpm to `changeset publish --tag <tag>`. Inputs are read from env to
+        # avoid script injection. The staged path can't take an appended flag
+        # (its `:ci` script is chained), so `tag` only applies to publish mode.
+        env:
+          MODE: ${{ inputs.mode }}
+          PUBLISH: ${{ inputs.publish }}
+          STAGE: ${{ inputs.stage }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          if [ "$MODE" = 'publish' ]; then
+            cmd="$PUBLISH"
+            [ -n "$TAG" ] && cmd="$cmd -- --tag $TAG"
+          else
+            cmd="$STAGE"
+          fi
+          echo "publish=$cmd" >> "$GITHUB_OUTPUT"
+
       - name: Release (${{ inputs.mode }})
         id: changesets
         uses: changesets/action@63a615b9cd06ba9a3e6d13796c7fbcb080a60a0b # v1
@@ -142,8 +168,9 @@ jobs:
           # spawns it directly (no shell), so `&&` and `>>` only work when wrapped
           # in a script pnpm runs via a shell.
           # The `publish` command (default `pnpm release` / `changeset publish`)
-          # promotes to `latest`. Both are inputs so repos can override them.
-          publish: ${{ inputs.mode == 'publish' && inputs.publish || inputs.stage }}
+          # promotes to `latest`, or to the `tag` dist-tag when set. Both are
+          # inputs so repos can override them.
+          publish: ${{ steps.cmd.outputs.publish }}
           commit: ${{ inputs.commit }}
           setupGitUser: false
         env:

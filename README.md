@@ -91,6 +91,7 @@ The `mode` input selects the release type:
 | `mode` | `publish` or `staged` | `staged` |
 | `owner` | Repository owner allowed to release (guards forks) | `kubb-labs` |
 | `node-version` | Node.js version to use | `22` |
+| `tag` | npm dist-tag to publish under (empty = `latest`, publish mode only) | `''` |
 | `publish` | Command run in `publish` mode | `pnpm release` |
 | `stage` | Command run in `staged` mode | `pnpm release:stage:ci` |
 | `build` | Command used to build packages | `pnpm run build` |
