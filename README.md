@@ -91,6 +91,8 @@ The `mode` input selects the release type:
 | `mode` | `publish` or `staged` | `staged` |
 | `owner` | Repository owner allowed to release (guards forks) | `kubb-labs` |
 | `node-version` | Node.js version to use | `22` |
+| `publish` | Command run in `publish` mode | `pnpm release` |
+| `stage` | Command run in `staged` mode | `pnpm release:stage:ci` |
 | `build` | Command used to build packages | `pnpm run build` |
 | `test` | Optional test command; skipped when empty | `''` |
 | `codecov` | Upload coverage to Codecov after tests | `false` |
@@ -106,8 +108,9 @@ The `mode` input selects the release type:
 
 > `GITHUB_TOKEN` is provided automatically to the called workflow.
 
-The consumer repo must define the scripts the chosen mode calls: `release` for `publish` mode and
-`release:stage:ci` for `staged` mode.
+By default the consumer repo must define the scripts the chosen mode calls (`release` for `publish`
+mode, `release:stage:ci` for `staged` mode). Override the `publish` / `stage` inputs to run different
+commands per repo.
 
 #### Usage
 

@@ -28,6 +28,16 @@ on:
         type: string
         required: false
         default: '22'
+      publish:
+        description: 'Command run in publish mode (promotes to npm latest)'
+        type: string
+        required: false
+        default: 'pnpm release'
+      stage:
+        description: 'Command run in staged mode (stages without latest)'
+        type: string
+        required: false
+        default: 'pnpm release:stage:ci'
       build:
         description: 'Command used to build packages before publishing'
         type: string
@@ -123,16 +133,17 @@ jobs:
         id: changesets
         uses: changesets/action@63a615b9cd06ba9a3e6d13796c7fbcb080a60a0b # v1
         with:
-          # `staged` runs `release:stage:ci`, which chains three steps:
-          # `release:stage` stages every package on npm (no publish to `latest`),
-          # `changeset tag` creates the local git tags and prints the `New tag:`
-          # lines the action parses to push tags and create a GitHub Release per
-          # package, and the final echo records that staging ran. It must be a
-          # single script: the action splits `publish` on whitespace and spawns it
-          # directly (no shell), so `&&` and `>>` only work when wrapped in a
-          # script pnpm runs via a shell.
-          # `publish` runs `release` (`changeset publish`), promoting to `latest`.
-          publish: ${{ inputs.mode == 'publish' && 'pnpm release' || 'pnpm release:stage:ci' }}
+          # The `stage` command (default `pnpm release:stage:ci`) chains three
+          # steps: `release:stage` stages every package on npm (no publish to
+          # `latest`), `changeset tag` creates the local git tags and prints the
+          # `New tag:` lines the action parses to push tags and create a GitHub
+          # Release per package, and a final echo records that staging ran. It
+          # must be a single script: the action splits `publish` on whitespace and
+          # spawns it directly (no shell), so `&&` and `>>` only work when wrapped
+          # in a script pnpm runs via a shell.
+          # The `publish` command (default `pnpm release` / `changeset publish`)
+          # promotes to `latest`. Both are inputs so repos can override them.
+          publish: ${{ inputs.mode == 'publish' && inputs.publish || inputs.stage }}
           commit: ${{ inputs.commit }}
           setupGitUser: false
         env:
