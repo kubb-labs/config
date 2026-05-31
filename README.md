@@ -92,9 +92,9 @@ The `mode` input selects the release type:
 | `owner` | Repository owner allowed to release (guards forks) | `kubb-labs` |
 | `node-version` | Node.js version to use | `22` |
 | `tag` | npm dist-tag to publish under (empty = `latest`, publish mode only) | `''` |
-| `publish` | Command run in `publish` mode | `pnpm release` |
-| `stage` | Command run in `staged` mode | `pnpm release:stage:ci` |
-| `build` | Command used to build packages | `pnpm run build` |
+| `publish` | **Required.** Command run in `publish` mode | — |
+| `stage` | **Required.** Command run in `staged` mode | — |
+| `build` | **Required.** Command used to build packages | — |
 | `test` | Optional test command; skipped when empty | `''` |
 | `codecov` | Upload coverage to Codecov after tests | `false` |
 | `commit` | Commit message for the Changesets version PR | `ci(changesets): version packages` |
@@ -149,6 +149,9 @@ jobs:
     with:
       mode: ${{ inputs.mode || 'staged' }}
       owner: 'kubb-labs'
+      publish: 'pnpm release'
+      stage: 'pnpm release:stage:ci'
+      build: 'pnpm run build'
       notify: true
     secrets:
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}

@@ -36,18 +36,15 @@ on:
       publish:
         description: 'Command run in publish mode (promotes to npm latest)'
         type: string
-        required: false
-        default: 'pnpm release'
+        required: true
       stage:
         description: 'Command run in staged mode (stages without latest)'
         type: string
-        required: false
-        default: 'pnpm release:stage:ci'
+        required: true
       build:
         description: 'Command used to build packages before publishing'
         type: string
-        required: false
-        default: 'pnpm run build'
+        required: true
       test:
         description: 'Optional test command; skipped when empty'
         type: string
