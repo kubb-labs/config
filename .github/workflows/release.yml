@@ -1,0 +1,175 @@
+name: Release
+
+# Reusable release workflow for Kubb repositories.
+#
+# Centralizes the Changesets-based release that used to be copy-pasted into
+# every repo. Callers pick a `mode`:
+#   - staged  : `release:stage:ci` stages every package on npm without touching
+#               the `latest` tag; a maintainer promotes it later with 2FA.
+#   - publish : `changeset publish` publishes straight to the `latest` tag.
+#
+# Publishing uses npm OIDC trusted publishing with provenance, so no NPM_TOKEN
+# secret is required. `id-token: write` is granted by the caller's job.
+on:
+  workflow_call:
+    inputs:
+      mode:
+        description: 'Release mode: "publish" (promote to npm latest) or "staged" (stage without latest)'
+        type: string
+        required: false
+        default: 'staged'
+      owner:
+        description: 'Repository owner allowed to release (guards forks)'
+        type: string
+        required: false
+        default: 'kubb-labs'
+      node-version:
+        description: 'Node.js version to use'
+        type: string
+        required: false
+        default: '22'
+      build-command:
+        description: 'Command used to build packages before publishing'
+        type: string
+        required: false
+        default: 'pnpm run build'
+      test-command:
+        description: 'Optional test command; skipped when empty'
+        type: string
+        required: false
+        default: ''
+      codecov:
+        description: 'Upload coverage to Codecov after tests'
+        type: boolean
+        required: false
+        default: false
+      commit:
+        description: 'Commit message used by the Changesets version PR'
+        type: string
+        required: false
+        default: 'ci(changesets): version packages'
+      notify:
+        description: 'Send a Discord notification after a release'
+        type: boolean
+        required: false
+        default: false
+    secrets:
+      DISCORD_WEBHOOK_URL:
+        required: false
+      CODECOV_TOKEN:
+        required: false
+
+# Deny all permissions at workflow level; the release job below declares only
+# what it needs. The caller must grant the same permissions on the job that
+# `uses:` this workflow.
+permissions: {}
+
+jobs:
+  release:
+    name: Release
+    if: github.repository_owner == inputs.owner
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    # id-token: write is scoped to this job, which runs after the build/tests.
+    # The fresh install below avoids restoring a potentially poisoned pnpm cache.
+    permissions:
+      contents: write
+      id-token: write
+      packages: write
+      pull-requests: write
+      issues: write
+    outputs:
+      released: ${{ steps.changesets.outputs.staged == 'true' || steps.changesets.outputs.published == 'true' }}
+    steps:
+      - name: Validate mode
+        shell: bash
+        run: |
+          case "${{ inputs.mode }}" in
+            publish|staged) ;;
+            *) echo "::error::Invalid mode '${{ inputs.mode }}'. Use 'publish' or 'staged'." ; exit 1 ;;
+          esac
+
+      - name: Check out code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Tools
+        uses: ./.github/setup
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'false'
+
+      - name: Reinstall dependencies (release hardening)
+        # Defense-in-depth: re-install so the release build does not implicitly
+        # trust a pnpm store restored from cache by the composite Setup Tools
+        # step. Lockfile integrity hashes still gate content.
+        run: pnpm install --frozen-lockfile --force
+
+      - name: Build
+        run: ${{ inputs.build-command }}
+
+      - name: Test
+        if: ${{ inputs.test-command != '' }}
+        run: ${{ inputs.test-command }}
+
+      - name: Upload coverage reports to Codecov
+        if: ${{ inputs.codecov }}
+        uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Release (${{ inputs.mode }})
+        id: changesets
+        uses: changesets/action@63a615b9cd06ba9a3e6d13796c7fbcb080a60a0b # v1
+        with:
+          # `staged` runs `release:stage:ci`, which chains three steps:
+          # `release:stage` stages every package on npm (no publish to `latest`),
+          # `changeset tag` creates the local git tags and prints the `New tag:`
+          # lines the action parses to push tags and create a GitHub Release per
+          # package, and the final echo records that staging ran. It must be a
+          # single script: the action splits `publish` on whitespace and spawns it
+          # directly (no shell), so `&&` and `>>` only work when wrapped in a
+          # script pnpm runs via a shell.
+          # `publish` runs `release` (`changeset publish`), promoting to `latest`.
+          publish: ${{ inputs.mode == 'publish' && 'pnpm release' || 'pnpm release:stage:ci' }}
+          commit: ${{ inputs.commit }}
+          setupGitUser: false
+        env:
+          NPM_CONFIG_PROVENANCE: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    name: Send Discord Notification
+    needs: [release]
+    if: ${{ inputs.notify && needs.release.outputs.released == 'true' }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Send a discord notification
+        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Skips cleanly when DISCORD_WEBHOOK_URL is not configured.
+            // The secrets context is not available in step `if:` conditions,
+            // so the guard lives here instead.
+            if (!process.env.DISCORD_WEBHOOK_URL) {
+              console.log('DISCORD_WEBHOOK_URL not set, skipping notification');
+              return;
+            }
+            fetch(process.env.DISCORD_WEBHOOK_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                content: `A new release is available 🎉. \n [Read the changelog](https://github.com/${context.repo.owner}/${context.repo.repo}/releases)`,
+              }),
+            })
+              .then((res) => {
+                console.log('Sent discord notification', res.status);
+              })
+              .catch((err) => {
+                console.error('Error sending discord notification', err);
+              });
