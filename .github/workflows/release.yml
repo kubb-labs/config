@@ -33,6 +33,11 @@ on:
         type: string
         required: false
         default: ''
+      dry-run:
+        description: 'Validate the release without publishing to npm'
+        type: boolean
+        required: false
+        default: false
       publish:
         description: 'Command run in publish mode (promotes to npm latest)'
         type: string
@@ -154,6 +159,7 @@ jobs:
 
       - name: Release (${{ inputs.mode }})
         id: changesets
+        if: ${{ !inputs.dry-run }}
         uses: changesets/action@63a615b9cd06ba9a3e6d13796c7fbcb080a60a0b # v1
         with:
           # The `stage` command (default `pnpm release:stage:ci`) chains three
@@ -173,6 +179,24 @@ jobs:
         env:
           NPM_CONFIG_PROVENANCE: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Dry run (no publish)
+        if: ${{ inputs.dry-run }}
+        shell: bash
+        # Exercises the full pipeline without touching npm: prints the command
+        # that would run, shows the Changesets release plan, and packs every
+        # publishable package with `pnpm publish --dry-run` (does everything
+        # except the registry upload). `latest` and other dist-tags are never
+        # moved. TAG is read from env to avoid script injection.
+        env:
+          CMD: ${{ steps.cmd.outputs.publish }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          echo "::notice::DRY RUN — would run: $CMD"
+          echo "== Changeset status =="
+          pnpm exec changeset status --verbose || true
+          echo "== pnpm publish --dry-run${TAG:+ (tag: $TAG)} =="
+          pnpm -r publish --dry-run --no-git-checks ${TAG:+--tag "$TAG"}
 
   notify:
     name: Send Discord Notification

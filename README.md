@@ -92,6 +92,7 @@ The `mode` input selects the release type:
 | `owner` | Repository owner allowed to release (guards forks) | `kubb-labs` |
 | `node-version` | Node.js version to use | `22` |
 | `tag` | npm dist-tag to publish under (empty = `latest`, publish mode only) | `''` |
+| `dry-run` | Validate the release (status + `pnpm publish --dry-run`) without publishing | `false` |
 | `publish` | **Required.** Command run in `publish` mode | — |
 | `stage` | **Required.** Command run in `staged` mode | — |
 | `build` | **Required.** Command used to build packages | — |
