@@ -28,12 +28,12 @@ on:
         type: string
         required: false
         default: '22'
-      build-command:
+      build:
         description: 'Command used to build packages before publishing'
         type: string
         required: false
         default: 'pnpm run build'
-      test-command:
+      test:
         description: 'Optional test command; skipped when empty'
         type: string
         required: false
@@ -107,11 +107,11 @@ jobs:
         run: pnpm install --frozen-lockfile --force
 
       - name: Build
-        run: ${{ inputs.build-command }}
+        run: ${{ inputs.build }}
 
       - name: Test
-        if: ${{ inputs.test-command != '' }}
-        run: ${{ inputs.test-command }}
+        if: ${{ inputs.test != '' }}
+        run: ${{ inputs.test }}
 
       - name: Upload coverage reports to Codecov
         if: ${{ inputs.codecov }}

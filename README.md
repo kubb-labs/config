@@ -91,8 +91,8 @@ The `mode` input selects the release type:
 | `mode` | `publish` or `staged` | `staged` |
 | `owner` | Repository owner allowed to release (guards forks) | `kubb-labs` |
 | `node-version` | Node.js version to use | `22` |
-| `build-command` | Command used to build packages | `pnpm run build` |
-| `test-command` | Optional test command; skipped when empty | `''` |
+| `build` | Command used to build packages | `pnpm run build` |
+| `test` | Optional test command; skipped when empty | `''` |
 | `codecov` | Upload coverage to Codecov after tests | `false` |
 | `commit` | Commit message for the Changesets version PR | `ci(changesets): version packages` |
 | `notify` | Send a Discord notification after a release | `false` |
