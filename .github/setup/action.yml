@@ -11,6 +11,10 @@ inputs:
     description: 'Cache/build tool to use: "turbo" (default) or "moon"'
     required: false
     default: 'turbo'
+  force-install:
+    description: 'Re-fetch dependencies with `pnpm install --frozen-lockfile --force` instead of `--prefer-offline`. Defense-in-depth for release jobs so the build does not implicitly trust a pnpm store restored from cache. Lets callers drop a second install step.'
+    required: false
+    default: 'false'
 
 runs:
   using: composite
@@ -52,7 +56,17 @@ runs:
 
     - name: Install dependencies
       shell: bash
-      run: pnpm install --frozen-lockfile --prefer-offline
+      # `force-install: 'true'` re-fetches with --force (release hardening);
+      # otherwise install with --prefer-offline. Read from env to keep the
+      # input out of the shell command.
+      env:
+        FORCE_INSTALL: ${{ inputs.force-install }}
+      run: |
+        if [ "$FORCE_INSTALL" = 'true' ]; then
+          pnpm install --frozen-lockfile --force
+        else
+          pnpm install --frozen-lockfile --prefer-offline
+        fi
       
     - name: Setup Turbo cache
       if: ${{ inputs.cache == 'turbo' }}
