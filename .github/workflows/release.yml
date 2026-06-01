@@ -7,6 +7,12 @@ name: Release
 #   - staged  : `release:stage:ci` stages every package on npm without touching
 #               the `latest` tag; a maintainer promotes it later with 2FA.
 #   - publish : `changeset publish` publishes straight to the `latest` tag.
+#   - canary  : on every push, stamp each package with a unique
+#               `-canary.<timestamp>` version (via the shared canary.sh), build,
+#               and publish under the `canary` dist-tag. This is the path for
+#               repos in Changesets pre-mode (beta/alpha/rc), where
+#               `changeset version --snapshot` is rejected. `latest` is never
+#               touched.
 #
 # Publishing uses npm OIDC trusted publishing with provenance, so no NPM_TOKEN
 # secret is required. `id-token: write` is granted by the caller's job.
@@ -14,7 +20,7 @@ on:
   workflow_call:
     inputs:
       mode:
-        description: 'Release mode: "publish" (promote to npm latest) or "staged" (stage without latest)'
+        description: 'Release mode: "publish" (promote to npm latest), "staged" (stage without latest), or "canary" (timestamp prerelease under the canary tag)'
         type: string
         required: false
         default: 'staged'
@@ -50,6 +56,16 @@ on:
         description: 'Command used to build packages before publishing'
         type: string
         required: true
+      canary-build:
+        description: 'Build command used in canary mode (defaults to `build` when empty)'
+        type: string
+        required: false
+        default: ''
+      canary-filter:
+        description: 'pnpm filter selecting the packages stamped and published in canary mode'
+        type: string
+        required: false
+        default: './packages/*'
       test:
         description: 'Optional test command; skipped when empty'
         type: string
@@ -84,7 +100,7 @@ permissions: {}
 jobs:
   release:
     name: Release
-    if: github.repository_owner == inputs.owner
+    if: ${{ github.repository_owner == inputs.owner && inputs.mode != 'canary' }}
     timeout-minutes: 15
     runs-on: ubuntu-latest
     # id-token: write is scoped to this job, which runs after the build/tests.
@@ -102,8 +118,8 @@ jobs:
         shell: bash
         run: |
           case "${{ inputs.mode }}" in
-            publish|staged) ;;
-            *) echo "::error::Invalid mode '${{ inputs.mode }}'. Use 'publish' or 'staged'." ; exit 1 ;;
+            publish|staged|canary) ;;
+            *) echo "::error::Invalid mode '${{ inputs.mode }}'. Use 'publish', 'staged', or 'canary'." ; exit 1 ;;
           esac
 
       - name: Check out code
@@ -197,6 +213,56 @@ jobs:
           pnpm exec changeset status --verbose || true
           echo "== pnpm publish --dry-run${TAG:+ (tag: $TAG)} =="
           pnpm -r publish --dry-run --no-git-checks ${TAG:+--tag "$TAG"}
+
+  canary:
+    name: Canary
+    if: ${{ github.repository_owner == inputs.owner && inputs.mode == 'canary' }}
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    # Mirrors the release job's hardening: a fresh, forced install and a job
+    # scoped `id-token: write` for OIDC trusted publishing with provenance.
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Tools
+        uses: ./.github/setup
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'false'
+
+      - name: Reinstall dependencies (release hardening)
+        run: pnpm install --frozen-lockfile --force
+
+      - name: Stamp canary versions
+        shell: bash
+        # Repos in Changesets pre-mode cannot use `changeset version --snapshot`,
+        # so each selected package is stamped with a unique `-canary.<timestamp>`
+        # version by the shared script instead. `pnpm -r exec` runs it from every
+        # matched package directory, where canary.sh edits that `./package.json`.
+        env:
+          FILTER: ${{ inputs.canary-filter }}
+        run: pnpm --filter "$FILTER" -r exec bash "$GITHUB_WORKSPACE/.github/canary.sh"
+
+      - name: Build
+        run: ${{ inputs.canary-build != '' && inputs.canary-build || inputs.build }}
+
+      - name: Publish canary
+        shell: bash
+        # Publishes every selected, publishable package under the `canary`
+        # dist-tag. `latest` is never moved. Uses the changeset/npm CLI directly
+        # rather than the removed `release:canary` script. `--no-git-checks`
+        # tolerates the dirty tree left by the version stamping above.
+        env:
+          NPM_CONFIG_PROVENANCE: true
+          FILTER: ${{ inputs.canary-filter }}
+        run: pnpm --filter "$FILTER" -r publish --tag canary --no-git-checks
 
   notify:
     name: Send Discord Notification

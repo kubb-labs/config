@@ -37,6 +37,18 @@ runs:
         # This built-in cache handles the store path logic automatically
         cache: 'pnpm'
 
+    - name: Provide shared canary script
+      shell: bash
+      # Copies the canary stamper hosted in this repo into the caller's
+      # workspace so it no longer has to be duplicated per repo. Baked into
+      # setup so every consumer gets it at .github/canary.sh. `$GITHUB_ACTION_PATH`
+      # points at the `.github/setup` directory of this action, so the script
+      # sits one level up at `.github/canary.sh`.
+      run: |
+        mkdir -p "$GITHUB_WORKSPACE/.github"
+        cp "$GITHUB_ACTION_PATH/../canary.sh" "$GITHUB_WORKSPACE/.github/canary.sh"
+        chmod +x "$GITHUB_WORKSPACE/.github/canary.sh"
+
     - name: Setup Git User
       shell: bash
       run: |
