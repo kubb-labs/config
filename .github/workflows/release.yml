@@ -79,6 +79,10 @@ on:
         required: false
       CODECOV_TOKEN:
         required: false
+    outputs:
+      released:
+        description: 'Whether the release published or staged any package'
+        value: ${{ jobs.release.outputs.released }}
 
 # Deny all permissions at workflow level; the release job below declares only
 # what it needs. The caller must grant the same permissions on the job that
