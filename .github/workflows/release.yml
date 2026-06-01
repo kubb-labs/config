@@ -8,11 +8,9 @@ name: Release
 #               the `latest` tag; a maintainer promotes it later with 2FA.
 #   - publish : `changeset publish` publishes straight to the `latest` tag.
 #   - canary  : on every push, stamp each package with a unique
-#               `-canary.<timestamp>` version (via the shared canary.sh), build,
-#               and publish under the `canary` dist-tag. This is the path for
-#               repos in Changesets pre-mode (beta/alpha/rc), where
-#               `changeset version --snapshot` is rejected. `latest` is never
-#               touched.
+#               `-canary.<timestamp>` version via the shared canary.sh, build,
+#               and publish under the `canary` dist-tag (never `latest`). Path
+#               for repos in Changesets pre-mode, where `--snapshot` is rejected.
 #
 # Publishing uses npm OIDC trusted publishing with provenance, so no NPM_TOKEN
 # secret is required. `id-token: write` is granted by the caller's job.
@@ -209,8 +207,6 @@ jobs:
     if: ${{ github.repository_owner == inputs.owner && inputs.mode == 'canary' }}
     timeout-minutes: 15
     runs-on: ubuntu-latest
-    # Mirrors the release job's hardening: a fresh, forced install and a job
-    # scoped `id-token: write` for OIDC trusted publishing with provenance.
     permissions:
       contents: read
       id-token: write
@@ -232,10 +228,6 @@ jobs:
 
       - name: Stamp canary versions
         shell: bash
-        # Repos in Changesets pre-mode cannot use `changeset version --snapshot`,
-        # so the shared canary.sh stamps each package with a unique
-        # `-canary.<timestamp>` version instead. `pnpm -r exec` runs it from every
-        # workspace package directory, where canary.sh edits that `./package.json`.
         run: pnpm -r exec bash "$GITHUB_WORKSPACE/.github/canary.sh"
 
       - name: Build
@@ -243,10 +235,6 @@ jobs:
 
       - name: Publish canary
         shell: bash
-        # Same publish command as a normal release, but pinned to the `canary`
-        # dist-tag so `latest` is never moved. PUBLISH is read from env to avoid
-        # script injection; `-- --tag canary` flows through pnpm to
-        # `changeset publish`.
         env:
           NPM_CONFIG_PROVENANCE: true
           PUBLISH: ${{ inputs.publish }}

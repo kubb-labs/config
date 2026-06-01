@@ -1,17 +1,4 @@
 #!/usr/bin/env bash
-# Canary version stamper for Changesets pre-mode repos.
-#
-# Repos that sit in Changesets pre-mode (`beta`/`alpha`/`rc`) cannot use
-# `changeset version --snapshot` — the snapshot command is rejected while a
-# `.changeset/pre.json` is present. This script provides the timestamp-based
-# alternative: bump the next minor, then rewrite the version to a unique
-# `-canary.<UTC timestamp>` prerelease so every push publishes a distinct,
-# installable canary under the `canary` dist-tag (never `latest`).
-#
-# Run it from a package directory (it edits the `./package.json` in the current
-# working directory). The reusable release workflow runs it per package via
-# `pnpm -r exec`, then builds and publishes with the repo's normal publish
-# command pinned to `--tag canary`.
 npm --no-git-tag-version version minor || true
 
 version=$(node -p "require('./package.json').version")
