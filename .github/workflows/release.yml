@@ -7,6 +7,10 @@ name: Release
 #   - staged  : `release:stage:ci` stages every package on npm without touching
 #               the `latest` tag; a maintainer promotes it later with 2FA.
 #   - publish : `changeset publish` publishes straight to the `latest` tag.
+#   - canary  : on every push, stamp each package with a unique
+#               `-canary.<timestamp>` version via the shared canary.sh, build,
+#               and publish under the `canary` dist-tag (never `latest`). Path
+#               for repos in Changesets pre-mode, where `--snapshot` is rejected.
 #
 # Publishing uses npm OIDC trusted publishing with provenance, so no NPM_TOKEN
 # secret is required. `id-token: write` is granted by the caller's job.
@@ -14,7 +18,7 @@ on:
   workflow_call:
     inputs:
       mode:
-        description: 'Release mode: "publish" (promote to npm latest) or "staged" (stage without latest)'
+        description: 'Release mode: "publish" (promote to npm latest), "staged" (stage without latest), or "canary" (timestamp prerelease under the canary tag)'
         type: string
         required: false
         default: 'staged'
@@ -75,6 +79,10 @@ on:
         required: false
       CODECOV_TOKEN:
         required: false
+    outputs:
+      released:
+        description: 'Whether the release published or staged any package'
+        value: ${{ jobs.release.outputs.released }}
 
 # Deny all permissions at workflow level; the release job below declares only
 # what it needs. The caller must grant the same permissions on the job that
@@ -84,7 +92,7 @@ permissions: {}
 jobs:
   release:
     name: Release
-    if: github.repository_owner == inputs.owner
+    if: ${{ github.repository_owner == inputs.owner && inputs.mode != 'canary' }}
     timeout-minutes: 15
     runs-on: ubuntu-latest
     # id-token: write is scoped to this job, which runs after the build/tests.
@@ -102,8 +110,8 @@ jobs:
         shell: bash
         run: |
           case "${{ inputs.mode }}" in
-            publish|staged) ;;
-            *) echo "::error::Invalid mode '${{ inputs.mode }}'. Use 'publish' or 'staged'." ; exit 1 ;;
+            publish|staged|canary) ;;
+            *) echo "::error::Invalid mode '${{ inputs.mode }}'. Use 'publish', 'staged', or 'canary'." ; exit 1 ;;
           esac
 
       - name: Check out code
@@ -197,6 +205,44 @@ jobs:
           pnpm exec changeset status --verbose || true
           echo "== pnpm publish --dry-run${TAG:+ (tag: $TAG)} =="
           pnpm -r publish --dry-run --no-git-checks ${TAG:+--tag "$TAG"}
+
+  canary:
+    name: Canary
+    if: ${{ github.repository_owner == inputs.owner && inputs.mode == 'canary' }}
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Tools
+        uses: ./.github/setup
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'false'
+
+      - name: Reinstall dependencies (release hardening)
+        run: pnpm install --frozen-lockfile --force
+
+      - name: Stamp canary versions
+        shell: bash
+        run: pnpm -r exec bash "$GITHUB_WORKSPACE/.github/canary.sh"
+
+      - name: Build
+        run: ${{ inputs.build }}
+
+      - name: Publish canary
+        shell: bash
+        env:
+          NPM_CONFIG_PROVENANCE: true
+          PUBLISH: ${{ inputs.publish }}
+        run: $PUBLISH -- --tag canary
 
   notify:
     name: Send Discord Notification

@@ -37,6 +37,13 @@ runs:
         # This built-in cache handles the store path logic automatically
         cache: 'pnpm'
 
+    - name: Provide shared canary script
+      shell: bash
+      run: |
+        mkdir -p "$GITHUB_WORKSPACE/.github"
+        cp "$GITHUB_ACTION_PATH/../canary.sh" "$GITHUB_WORKSPACE/.github/canary.sh"
+        chmod +x "$GITHUB_WORKSPACE/.github/canary.sh"
+
     - name: Setup Git User
       shell: bash
       run: |
