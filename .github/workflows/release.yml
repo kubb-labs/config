@@ -56,16 +56,6 @@ on:
         description: 'Command used to build packages before publishing'
         type: string
         required: true
-      canary-build:
-        description: 'Build command used in canary mode (defaults to `build` when empty)'
-        type: string
-        required: false
-        default: ''
-      canary-filter:
-        description: 'pnpm filter selecting the packages stamped and published in canary mode'
-        type: string
-        required: false
-        default: './packages/*'
       test:
         description: 'Optional test command; skipped when empty'
         type: string
@@ -243,26 +233,24 @@ jobs:
       - name: Stamp canary versions
         shell: bash
         # Repos in Changesets pre-mode cannot use `changeset version --snapshot`,
-        # so each selected package is stamped with a unique `-canary.<timestamp>`
-        # version by the shared script instead. `pnpm -r exec` runs it from every
-        # matched package directory, where canary.sh edits that `./package.json`.
-        env:
-          FILTER: ${{ inputs.canary-filter }}
-        run: pnpm --filter "$FILTER" -r exec bash "$GITHUB_WORKSPACE/.github/canary.sh"
+        # so the shared canary.sh stamps each package with a unique
+        # `-canary.<timestamp>` version instead. `pnpm -r exec` runs it from every
+        # workspace package directory, where canary.sh edits that `./package.json`.
+        run: pnpm -r exec bash "$GITHUB_WORKSPACE/.github/canary.sh"
 
       - name: Build
-        run: ${{ inputs.canary-build != '' && inputs.canary-build || inputs.build }}
+        run: ${{ inputs.build }}
 
       - name: Publish canary
         shell: bash
-        # Publishes every selected, publishable package under the `canary`
-        # dist-tag. `latest` is never moved. Uses the changeset/npm CLI directly
-        # rather than the removed `release:canary` script. `--no-git-checks`
-        # tolerates the dirty tree left by the version stamping above.
+        # Same publish command as a normal release, but pinned to the `canary`
+        # dist-tag so `latest` is never moved. PUBLISH is read from env to avoid
+        # script injection; `-- --tag canary` flows through pnpm to
+        # `changeset publish`.
         env:
           NPM_CONFIG_PROVENANCE: true
-          FILTER: ${{ inputs.canary-filter }}
-        run: pnpm --filter "$FILTER" -r publish --tag canary --no-git-checks
+          PUBLISH: ${{ inputs.publish }}
+        run: $PUBLISH -- --tag canary
 
   notify:
     name: Send Discord Notification

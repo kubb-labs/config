@@ -10,7 +10,8 @@
 #
 # Run it from a package directory (it edits the `./package.json` in the current
 # working directory). The reusable release workflow runs it per package via
-# `pnpm -r exec` before building and `pnpm publish --tag canary`.
+# `pnpm -r exec`, then builds and publishes with the repo's normal publish
+# command pinned to `--tag canary`.
 npm --no-git-tag-version version minor || true
 
 version=$(node -p "require('./package.json').version")
