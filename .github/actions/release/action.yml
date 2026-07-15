@@ -1,0 +1,42 @@
+name: 'Release'
+description: 'Stages a changesets release (version + stage-publish) and reports what got staged.'
+
+inputs:
+  github-token:
+    description: 'Token for changesets/action (needs contents:write, pull-requests:write, issues:write).'
+    required: true
+  commit-message:
+    description: 'Commit message for the version-bump commit.'
+    required: false
+    default: 'ci(changesets): version packages'
+  title:
+    description: 'PR title for the version-bump PR.'
+    required: false
+    default: 'ci(changesets): version packages'
+
+outputs:
+  staged:
+    description: 'true if release.mjs staged at least one package.'
+    value: ${{ steps.changesets.outputs.staged }}
+  staged_packages:
+    description: 'JSON array of {name, version} staged by release.mjs.'
+    value: ${{ steps.changesets.outputs.staged_packages }}
+
+runs:
+  using: composite
+  steps:
+    # createGithubReleases stays off: a staged version isn't public until a
+    # `promote` step confirms npm approval, so nothing should announce it yet.
+    - name: Release
+      id: changesets
+      uses: changesets/action@63a615b9cd06ba9a3e6d13796c7fbcb080a60a0b # v1
+      with:
+        version: pnpm exec changeset version
+        publish: node ${{ github.action_path }}/release.mjs
+        commit: ${{ inputs.commit-message }}
+        title: ${{ inputs.title }}
+        setupGitUser: false
+        createGithubReleases: false
+      env:
+        NPM_CONFIG_PROVENANCE: true
+        GITHUB_TOKEN: ${{ inputs.github-token }}
