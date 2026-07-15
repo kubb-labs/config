@@ -1,0 +1,61 @@
+name: 'Promote'
+description: 'Verifies staged package versions are live on npm, tags the release, and creates GitHub Releases.'
+
+inputs:
+  staged-packages:
+    description: 'JSON array of {name, version} staged by the release action.'
+    required: true
+  github-token:
+    description: 'Token for `gh release create` (contents: write).'
+    required: true
+  release-mode:
+    description: "'combined' for one release per version (fixed/linked packages), unset/'per-package' otherwise."
+    required: false
+    default: ''
+  verify-interval-seconds:
+    description: 'How often to re-poll npm while waiting for a staged version to propagate.'
+    required: false
+    default: '300'
+  verify-retry-attempts:
+    description: 'How many times to poll npm before giving up.'
+    required: false
+    default: '10'
+
+outputs:
+  approved:
+    description: 'true once every staged package is confirmed live on npm.'
+    value: ${{ steps.verify.outputs.approved }}
+
+runs:
+  using: composite
+  steps:
+    # A green environment review only means a maintainer clicked approve,
+    # not that they actually ran `npm stage approve`. This confirms the
+    # staged versions are really live on the registry before anything
+    # public fires.
+    - name: Verify staged versions are live on npm
+      id: verify
+      shell: bash
+      run: node ${{ github.action_path }}/verifyRegistry.mjs
+      env:
+        STAGED_PACKAGES: ${{ inputs.staged-packages }}
+        VERIFY_INTERVAL_SECONDS: ${{ inputs.verify-interval-seconds }}
+        VERIFY_RETRY_ATTEMPTS: ${{ inputs.verify-retry-attempts }}
+
+    # Tags are created here, not at stage time, so a rejected or expired
+    # staged package never leaves a dangling tag behind (see
+    # changesets/changesets#2025). The versions are already confirmed live
+    # above, so tagging now always points at something real.
+    - name: Tag released versions
+      shell: bash
+      run: |
+        pnpm exec changeset tag
+        git push --tags
+
+    - name: Create GitHub Releases
+      shell: bash
+      run: node ${{ github.action_path }}/createReleases.mjs
+      env:
+        STAGED_PACKAGES: ${{ inputs.staged-packages }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        RELEASE_MODE: ${{ inputs.release-mode }}
