@@ -8,9 +8,11 @@ Shared configuration and reusable GitHub Actions for [Kubb](https://github.com/k
 
 A composite action that sets up the standard Kubb development environment:
 
+- [step-security/harden-runner](https://github.com/step-security/harden-runner) egress monitoring
 - [pnpm](https://pnpm.io/) package manager
 - [Bun](https://bun.sh/) runtime
-- [Node.js](https://nodejs.org/) (default: `22.x`)
+- [Node.js](https://nodejs.org/)
+- [safe-chain](https://github.com/AikidoSec/safe-chain) supply-chain protection (blocks known-malicious packages, enforces a 72h minimum package age)
 - Git user configuration
 - pnpm store cache
 - [Turbo](https://turbo.build/) remote cache
@@ -19,8 +21,9 @@ A composite action that sets up the standard Kubb development environment:
 
 | Input | Description | Default |
 |-------|-------------|---------|
-| `node-version` | Node.js version to use | `22.x` |
+| `node-version` | Node.js version to use (e.g., `22`, `24`, or `22.x`) | (required) |
 | `cache` | Cache/build tool: `turbo` or `moon` | `turbo` |
+| `force-install` | Re-fetch dependencies with `pnpm install --frozen-lockfile --force` instead of `--prefer-offline` | `false` |
 
 #### Usage
 
@@ -32,6 +35,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: kubb-labs/config/.github/setup@main
+        with:
+          node-version: '22'
 
       - run: pnpm build
 ```
@@ -63,6 +68,7 @@ jobs:
 
       - uses: kubb-labs/config/.github/setup@main
         with:
+          node-version: '22'
           cache: moon
 
       - run: moon ci
@@ -107,6 +113,8 @@ jobs:
           fetch-depth: 0
 
       - uses: kubb-labs/config/.github/setup@main
+        with:
+          node-version: '22'
 
       - name: Release
         id: release
@@ -155,6 +163,8 @@ jobs:
           fetch-depth: 0
 
       - uses: kubb-labs/config/.github/setup@main
+        with:
+          node-version: '22'
 
       - name: Promote
         id: promote
