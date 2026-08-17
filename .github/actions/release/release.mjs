@@ -14,9 +14,30 @@ function readPreTag() {
 // payload, in whichever shape it comes in (a bare array, or an object keyed by
 // package name, both observed across pnpm/npm staged-publish responses), then
 // falls back to scanning text output for `+ <name>@<version>` lines.
+// pnpm's --json payload can be preceded or followed by unrelated banner lines (safe-chain
+// notices, npm config warnings like "${NODE_AUTH_TOKEN}") sharing the same stdout stream. A
+// naive first/last bracket slice breaks on stray braces in that banner text, so walk the
+// bracket balance from the first `{`/`[` to find where the JSON value actually closes.
+function extractJson(output) {
+  const start = output.search(/[[{]/)
+  if (start === -1) return output
+
+  const open = output[start]
+  const close = open === '{' ? '}' : ']'
+  let depth = 0
+  for (let i = start; i < output.length; i++) {
+    if (output[i] === open) depth++
+    else if (output[i] === close) {
+      depth--
+      if (depth === 0) return output.slice(start, i + 1)
+    }
+  }
+  return output
+}
+
 export function parseStaged(output) {
   try {
-    const parsed = JSON.parse(output)
+    const parsed = JSON.parse(extractJson(output))
     const entries = Array.isArray(parsed)
       ? parsed
       : parsed && typeof parsed === 'object'

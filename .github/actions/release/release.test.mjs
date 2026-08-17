@@ -50,4 +50,21 @@ describe('parseStaged', () => {
   it('returns an empty array when nothing was staged', () => {
     expect(parseStaged('No packages to publish')).toStrictEqual([])
   })
+
+  it('ignores banner lines that share stdout with the JSON payload', () => {
+    const json = JSON.stringify({
+      '@kubb/core': { name: '@kubb/core', version: '5.0.0' },
+      kubb: { name: 'kubb', version: '5.0.0' },
+    })
+    const output = [
+      json,
+      'ℹ Safe-chain: Some package versions were suppressed during package metadata resolution due to minimum package age.',
+      '[WARN] Failed to replace env in config: ${NODE_AUTH_TOKEN}',
+    ].join('\n')
+
+    expect(parseStaged(output)).toStrictEqual([
+      { name: '@kubb/core', version: '5.0.0' },
+      { name: 'kubb', version: '5.0.0' },
+    ])
+  })
 })
