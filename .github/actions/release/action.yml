@@ -25,18 +25,18 @@ outputs:
 runs:
   using: composite
   steps:
-    # createGithubReleases stays off: a staged version isn't public until a
-    # `promote` step confirms npm approval, so nothing should announce it yet.
+    # Both default to true in v2, and must stay off: a staged version isn't
+    # public until `promote` confirms npm approval.
     - name: Release
       id: changesets
-      uses: changesets/action@fdf536a68c4154480c89b42547f8102cf0d8bc47 # v2.1.1
+      uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
       with:
         version-script: pnpm exec changeset version
         publish-script: node ${{ github.action_path }}/release.mjs
         commit-message: ${{ inputs.commit-message }}
         pr-title: ${{ inputs.title }}
-        setupGitUser: false
-        createGithubReleases: false
+        create-github-releases: false
+        push-git-tags: false
         github-token: ${{ inputs.github-token }}
       env:
         NPM_CONFIG_PROVENANCE: true
