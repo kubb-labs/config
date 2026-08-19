@@ -78,7 +78,7 @@ function createPerPackageReleases({ staged, repo }) {
 }
 
 // One release for the whole version, tagged with the flagship package's own
-// tag (already created by the `changeset tag` step) rather than inventing a
+// tag (already created by the `changeset git-tag` step) rather than inventing a
 // second, parallel tagging scheme.
 function createCombinedRelease({ staged, changelog, repo }) {
   const flagship = staged.find((pkg) => pkg.name === 'kubb') ?? staged[0]
