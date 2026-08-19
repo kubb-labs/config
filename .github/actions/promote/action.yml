@@ -49,7 +49,7 @@ runs:
     - name: Tag released versions
       shell: bash
       run: |
-        pnpm exec changeset tag
+        pnpm exec changeset git-tag
         git push --tags
 
     - name: Create GitHub Releases
