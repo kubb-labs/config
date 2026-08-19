@@ -50,6 +50,7 @@ runs:
         sh /tmp/install-safe-chain.sh --ci
         rm /tmp/install-safe-chain.sh
         echo "SAFE_CHAIN_MINIMUM_PACKAGE_AGE_HOURS=48" >> "$GITHUB_ENV"
+        echo "SAFE_CHAIN_MINIMUM_PACKAGE_AGE_EXCLUSIONS=kubb,@kubb/*,unplugin-kubb" >> "$GITHUB_ENV"
 
     - name: Setup Git User
       shell: bash
