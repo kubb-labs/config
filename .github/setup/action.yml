@@ -38,12 +38,10 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
         registry-url: 'https://registry.npmjs.org'
-        # This built-in cache handles the store path logic automatically
         cache: 'pnpm'
 
-    # Blocks known-malicious packages and enforces a 48h minimum package age
-    # at install, matching pnpm-workspace.yaml's minimumReleaseAge.
-    # https://github.com/AikidoSec/safe-chain
+    # Blocks known-malicious packages and enforces the 48h minimum package age
+    # matching pnpm-workspace.yaml. https://github.com/AikidoSec/safe-chain
     - name: Install safe-chain
       shell: bash
       run: |
@@ -61,9 +59,7 @@ runs:
 
     - name: Install dependencies
       shell: bash
-      # `force-install: 'true'` re-fetches with --force (release hardening);
-      # otherwise install with --prefer-offline. Read from env to keep the
-      # input out of the shell command.
+      # Read from env to keep the input out of the shell command.
       env:
         FORCE_INSTALL: ${{ inputs.force-install }}
       run: |
