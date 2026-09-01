@@ -13,6 +13,10 @@ inputs:
     description: 'PR title for the version-bump PR.'
     required: false
     default: 'ci(changesets): version packages'
+  version-script:
+    description: 'Command that bumps package versions. Override to run extra steps (e.g. syncing a generated file) right after `changeset version`.'
+    required: false
+    default: 'pnpm exec changeset version'
 
 outputs:
   staged:
@@ -31,7 +35,7 @@ runs:
       id: changesets
       uses: changesets/action@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
       with:
-        version-script: pnpm exec changeset version
+        version-script: ${{ inputs.version-script }}
         publish-script: node ${{ github.action_path }}/release.mjs
         commit-message: ${{ inputs.commit-message }}
         pr-title: ${{ inputs.title }}
