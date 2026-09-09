@@ -101,9 +101,14 @@ Keep the body in plain language: short sentences, active voice, exact paths and 
 
 ### How to test
 
-Write numbered steps a reviewer can follow, ending in the result they should see. For a workflow
-change, link a run that exercised it, either on this branch or from a downstream repo pointed at
-the branch with `kubb-labs/config/.github/setup@<branch>`.
+Fill it as a short list, one step per line, replacing the placeholders:
+
+- Step 1: [Clear reproduction step]
+- Step 2: [Next step]
+- Step 3: [Expected result]
+
+For a workflow change, link a run that exercised it, either on this branch or from a downstream
+repo pointed at the branch with `kubb-labs/config/.github/setup@<branch>`.
 
 ## 6. Push and open the PR
 

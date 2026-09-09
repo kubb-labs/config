@@ -9,7 +9,11 @@ Fill every section below, and tick a box only when you actually ran or verified 
 
 ## 🧪 How to test
 
-<!-- Numbered steps a reviewer can follow, ending in the result they should see. Link a workflow run that exercised the change. -->
+- Step 1: [Clear reproduction step]
+- Step 2: [Next step]
+- Step 3: [Expected result]
+
+<!-- Link a workflow run that exercised the change. -->
 
 ## ✅ Checklist
 
