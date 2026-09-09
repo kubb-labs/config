@@ -59,7 +59,7 @@ export function parseStaged(output) {
 
 function main() {
   const tag = readPreTag()
-  const stageArgs = ['stage', 'publish', '-r', '--no-git-check', '--access', 'public', '--json']
+  const stageArgs = ['stage', 'publish', '-r', '--no-git-checks', '--access', 'public', '--json']
   if (tag) stageArgs.push('--tag', tag)
 
   const result = spawnSync('pnpm', stageArgs, { encoding: 'utf8' })
