@@ -1,5 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { parseStaged } from './release.mjs'
+import { findOidcSkip, parseStaged } from './release.mjs'
+
+describe('findOidcSkip', () => {
+  it('returns the reason pnpm gave for skipping the token exchange', () => {
+    const output = [
+      'GET https://run-actions-1-azure-eastus.actions.githubusercontent.com/249//idtoken/abc?audience=npm 200 306ms',
+      '[WARN] Skipped OIDC: ERR_PNPM_AUTH_TOKEN_FETCH: Failed to fetch authToken for package @kubb/ast from registry https://registry.npmjs.org/: error sending request',
+      '📦 @kubb/ast@5.2.1 → https://registry.npmjs.org/',
+    ].join('\n')
+
+    expect(findOidcSkip(output)).toBe(
+      'ERR_PNPM_AUTH_TOKEN_FETCH: Failed to fetch authToken for package @kubb/ast from registry https://registry.npmjs.org/: error sending request',
+    )
+  })
+
+  it('returns null when the exchange succeeded', () => {
+    expect(findOidcSkip('+ @kubb/core@5.2.1\nDone')).toBeNull()
+  })
+})
 
 describe('parseStaged', () => {
   it('returns name/version pairs from a JSON array payload', () => {

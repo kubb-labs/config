@@ -85,6 +85,7 @@ A composite action that wraps `changesets/action` to version and stage-publish a
 | `github-token` | Token for `changesets/action` (needs `contents: write`, `pull-requests: write`, `issues: write`) | (required) |
 | `commit-message` | Commit message for the version-bump commit | `ci(changesets): version packages` |
 | `title` | PR title for the version-bump PR | `ci(changesets): version packages` |
+| `version-script` | Command that bumps package versions, to run extra steps after `changeset version` | `pnpm exec changeset version` |
 
 #### Outputs
 
@@ -122,6 +123,20 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+#### Trusted publishing
+
+There is no `NPM_TOKEN`. `release.mjs` publishes through npm trusted publishing, so the job needs
+`permissions: id-token: write` and every package needs a trusted publisher on npm pointing at this
+repository and workflow.
+
+When the token exchange fails, pnpm only warns (`Skipped OIDC: …`) and retries the publish
+anonymously, which npm rejects with a 401. `release.mjs` stops on that warning and prints the real
+reason, so read the `Skipped OIDC` line rather than the 401 under it.
+
+Known pnpm constraint: `pnpm stage publish` cannot complete the exchange on pnpm 12.4.0 or 12.4.1
+(the `next-12` line), while plain `pnpm publish` still can. Keep repos that use this action on the
+`latest` line, currently pnpm 12.3.4.
 
 ### `.github/actions/promote`
 

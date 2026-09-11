@@ -35,6 +35,16 @@ function extractJson(output) {
   return output
 }
 
+// pnpm warns `Skipped OIDC: <reason>` when it cannot trade the GitHub id token
+// for an npm auth token, then falls back to whatever static credentials it can
+// find. This pipeline has none on purpose, so that fallback publishes
+// anonymously and npm answers 401 — burying the real cause under an auth error
+// that looks like a missing NPM_TOKEN. Catch the warning and report it instead.
+export function findOidcSkip(output) {
+  const match = output.match(/Skipped OIDC:\s*(.+)/)
+  return match ? match[1].trim() : null
+}
+
 export function parseStaged(output) {
   try {
     const parsed = JSON.parse(extractJson(output))
@@ -58,6 +68,14 @@ export function parseStaged(output) {
 }
 
 function main() {
+  // Trusted publishing is the only credential this pipeline has. Without the
+  // id-token endpoint pnpm cannot even start the exchange, and every package
+  // would fail one by one on a 401 several minutes from now.
+  if (!process.env.ACTIONS_ID_TOKEN_REQUEST_URL) {
+    console.error('No OIDC id token available. Give the release job `permissions: id-token: write`.')
+    process.exit(1)
+  }
+
   const tag = readPreTag()
   const stageArgs = ['stage', 'publish', '-r', '--no-git-checks', '--access', 'public', '--json']
   if (tag) stageArgs.push('--tag', tag)
@@ -65,6 +83,15 @@ function main() {
   const result = spawnSync('pnpm', stageArgs, { encoding: 'utf8' })
   if (result.stdout) process.stdout.write(result.stdout)
   if (result.stderr) process.stderr.write(result.stderr)
+
+  const oidcSkip = findOidcSkip(`${result.stdout ?? ''}\n${result.stderr ?? ''}`)
+  if (oidcSkip) {
+    console.error(`pnpm could not exchange the GitHub id token for an npm token: ${oidcSkip}`)
+    console.error('Nothing was staged. Any 401 above is the anonymous fallback, not the cause.')
+    console.error('Check that the package has a trusted publisher on npm for this repo and workflow, and that pnpm can reach the registry.')
+    process.exit(1)
+  }
+
   if (result.status !== 0) process.exit(result.status ?? 1)
   const output = result.stdout ?? ''
   const staged = parseStaged(output)
