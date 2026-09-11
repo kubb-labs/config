@@ -33,11 +33,16 @@ runs:
     - name: Install bun
       uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
 
+    # No registry-url on purpose. It makes setup-node write an .npmrc holding
+    # `//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}` and point
+    # NPM_CONFIG_USERCONFIG at it. With no token in the environment that line
+    # never expands, pnpm still reads it as configured auth, and OIDC trusted
+    # publishing is skipped in favor of an empty token (401). Each repo's own
+    # .npmrc already sets the registry.
     - name: Setup Node.js environment
       uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
         node-version: ${{ inputs.node-version }}
-        registry-url: 'https://registry.npmjs.org'
         cache: 'pnpm'
 
     - name: Install safe-chain
