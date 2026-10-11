@@ -81,9 +81,9 @@ function main() {
 
   if (process.env.RELEASE_MODE === 'combined') {
     createCombinedRelease({ staged, changelog: readFileSync('CHANGELOG.md', 'utf8'), repo })
-  } else {
-    createPerPackageReleases({ staged, repo })
+    return
   }
+  createPerPackageReleases({ staged, repo })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
