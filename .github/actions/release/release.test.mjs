@@ -1,27 +1,22 @@
+import { delimiter } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { findOidcSkip, parseStaged, pathWithoutSafeChain } from './release.mjs'
 
 describe('pathWithoutSafeChain', () => {
-  it('drops the safe-chain shims directory from a POSIX PATH', () => {
-    const path = ['/root/.safe-chain/shims', '/home/runner/setup-pnpm/node_modules/.bin', '/usr/bin'].join(':')
+  it('drops the safe-chain shims directory from PATH', () => {
+    const path = ['/root/.safe-chain/shims', '/home/runner/setup-pnpm/node_modules/.bin', '/usr/bin'].join(delimiter)
 
-    expect(pathWithoutSafeChain(path, 'linux')).toBe('/home/runner/setup-pnpm/node_modules/.bin:/usr/bin')
-  })
-
-  it('drops the safe-chain shims directory from a Windows PATH', () => {
-    const path = ['C:\\Users\\runner\\.safe-chain\\shims', 'C:\\pnpm'].join(';')
-
-    expect(pathWithoutSafeChain(path, 'win32')).toBe('C:\\pnpm')
+    expect(pathWithoutSafeChain(path)).toBe(['/home/runner/setup-pnpm/node_modules/.bin', '/usr/bin'].join(delimiter))
   })
 
   it('leaves an unrelated PATH untouched', () => {
-    const path = ['/usr/local/bin', '/usr/bin'].join(':')
+    const path = ['/usr/local/bin', '/usr/bin'].join(delimiter)
 
-    expect(pathWithoutSafeChain(path, 'linux')).toBe(path)
+    expect(pathWithoutSafeChain(path)).toBe(path)
   })
 
   it('returns an empty string when PATH is unset', () => {
-    expect(pathWithoutSafeChain(undefined, 'linux')).toBe('')
+    expect(pathWithoutSafeChain(undefined)).toBe('')
   })
 })
 

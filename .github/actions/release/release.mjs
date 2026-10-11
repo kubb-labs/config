@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process'
 import { appendFileSync, readFileSync } from 'node:fs'
+import { delimiter } from 'node:path'
 
 // safe-chain (installed by the shared `setup` action) shims `pnpm` on PATH
 // and proxies every registry.npmjs.org call. It has no OIDC awareness and
 // breaks the one POST this pipeline makes, the id-token exchange, before any
 // HTTP response comes back. `pnpm install` earlier in the job still runs
 // through the shim and stays protected. Only this publish call skips it.
-export function pathWithoutSafeChain(pathValue, platform = process.platform) {
-  const separator = platform === 'win32' ? ';' : ':'
-  const entries = (pathValue ?? '').split(separator).filter((entry) => !entry.includes('.safe-chain'))
-  return entries.join(separator)
+export function pathWithoutSafeChain(pathValue) {
+  return (pathValue ?? '')
+    .split(delimiter)
+    .filter((entry) => !entry.includes('.safe-chain'))
+    .join(delimiter)
 }
 
 function readPreTag() {
