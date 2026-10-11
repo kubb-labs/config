@@ -6,8 +6,7 @@ const pkg = { name: '@kubb/core', version: '5.0.0-beta.81' }
 function mockFetch(responses) {
   const fetch = vi.fn()
   for (const response of responses) {
-    if (response instanceof Error) fetch.mockRejectedValueOnce(response)
-    else fetch.mockResolvedValueOnce(response)
+    response instanceof Error ? fetch.mockRejectedValueOnce(response) : fetch.mockResolvedValueOnce(response)
   }
   vi.stubGlobal('fetch', fetch)
   return fetch

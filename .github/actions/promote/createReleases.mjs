@@ -2,24 +2,14 @@
 import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 
-function escapeForRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
-// The lookahead after the version rejects a longer, hyphen-suffixed version
-// sharing the same numeric prefix (e.g. searching for "5.0.0" must not match
-// a "## v5.0.0-rc.1" heading), while still matching the exact version
-// followed by whitespace, a separator, or end of line.
-function versionHeadingPattern(version) {
-  return new RegExp(`^##\\s+v?${escapeForRegExp(version)}(?![\\w.-]).*$`, 'm')
-}
-
-// Returns the block under a `## v<version>` or `## <version>` heading, up to
-// the next `##` heading. Combined mode reads the root CHANGELOG.md that kubb's
-// internals/changelog hook writes (same heading format as its format.mjs).
-// Per-package mode reads each package's own CHANGELOG.md.
+// Combined mode reads the root CHANGELOG.md that kubb's internals/changelog
+// hook writes (same heading format as its format.mjs). Per-package mode reads
+// each package's own CHANGELOG.md, whose headings have no `v` prefix.
 export function extractVersionNotes({ changelog, version }) {
-  const versionMatch = versionHeadingPattern(version).exec(changelog)
+  const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  // The lookahead rejects a longer, hyphen-suffixed version sharing the same
+  // numeric prefix (e.g. "5.0.0" must not match a "## v5.0.0-rc.1" heading).
+  const versionMatch = new RegExp(`^##\\s+v?${escaped}(?![\\w.-]).*$`, 'm').exec(changelog)
   if (!versionMatch) return null
 
   const afterVersion = changelog.slice(versionMatch.index + versionMatch[0].length)

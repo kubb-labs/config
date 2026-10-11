@@ -4,8 +4,8 @@ import { appendFileSync } from 'node:fs'
 const RETRY_ATTEMPTS = 10
 const RETRY_DELAY_MS = 300_000
 
-// The registry takes a scoped name with its slash escaped (`@kubb%2fcore`),
-// the same way npm requests it. A network error counts as not live yet.
+// Escapes a scoped name's slash (`@kubb%2fcore`) the way the npm client does.
+// A network error counts as not live yet.
 async function isLiveOnRegistry(pkg) {
   try {
     const res = await fetch(`https://registry.npmjs.org/${pkg.name.replace('/', '%2f')}/${pkg.version}`)
