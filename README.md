@@ -132,8 +132,6 @@ A composite action that verifies staged package versions are live on npm, tags t
 | `staged-packages` | JSON array of `{name, version}` staged by `.github/actions/release` | (required) |
 | `github-token` | Token for `gh release create` (`contents: write`) | (required) |
 | `release-mode` | `combined` for one release per version (fixed/linked packages), unset/`per-package` otherwise | (empty, i.e. per-package) |
-| `verify-interval-seconds` | How often to re-poll npm while waiting for a staged version to propagate | `300` |
-| `verify-retry-attempts` | How many times to poll npm before giving up | `10` |
 
 #### Outputs
 

@@ -1,17 +1,15 @@
 #!/usr/bin/env node
-import { spawnSync } from 'node:child_process'
 import { appendFileSync } from 'node:fs'
 
-const RETRY_ATTEMPTS = Number(process.env.VERIFY_RETRY_ATTEMPTS) || 6
-const RETRY_DELAY_MS = (Number(process.env.VERIFY_INTERVAL_SECONDS) || 10) * 1_000
+const RETRY_ATTEMPTS = 10
+const RETRY_DELAY_MS = 300_000
 
-function isLiveOnRegistry(pkg) {
-  const result = spawnSync('npm', ['view', `${pkg.name}@${pkg.version}`, '--json'], { encoding: 'utf8' })
-  if (result.status !== 0) return false
-
+// The registry takes a scoped name with its slash escaped (`@kubb%2fcore`),
+// the same way npm requests it. A network error counts as not live yet.
+async function isLiveOnRegistry(pkg) {
   try {
-    const parsed = JSON.parse(result.stdout)
-    return Boolean(parsed?.version)
+    const res = await fetch(`https://registry.npmjs.org/${pkg.name.replace('/', '%2f')}/${pkg.version}`)
+    return res.ok
   } catch {
     return false
   }
@@ -23,7 +21,7 @@ function isLiveOnRegistry(pkg) {
 // means the version genuinely isn't live yet.
 export async function verifyPackage({ pkg, attempts = RETRY_ATTEMPTS, delayMs = RETRY_DELAY_MS }) {
   for (let attempt = 1; attempt <= attempts; attempt++) {
-    if (isLiveOnRegistry(pkg)) return true
+    if (await isLiveOnRegistry(pkg)) return true
 
     if (attempt < attempts) {
       process.stdout.write(`${pkg.name}@${pkg.version} not live yet (attempt ${attempt}/${attempts}), retrying in ${delayMs / 1_000}s ...\n`)
