@@ -61,18 +61,11 @@ runs:
         git config --global user.email "stijn@stijnvanhulle.be"
         git config --global user.name "Stijn Van Hulle"
 
+    # The expression yields one of two fixed flags, so input text never reaches the shell.
     - name: Install dependencies
       shell: bash
-      # Read from env to keep the input out of the shell command.
-      env:
-        FORCE_INSTALL: ${{ inputs.force-install }}
-      run: |
-        if [ "$FORCE_INSTALL" = 'true' ]; then
-          pnpm install --frozen-lockfile --force
-        else
-          pnpm install --frozen-lockfile --prefer-offline
-        fi
-      
+      run: pnpm install --frozen-lockfile ${{ inputs.force-install == 'true' && '--force' || '--prefer-offline' }}
+
     - name: Setup Turbo cache
       if: ${{ inputs.cache == 'turbo' }}
       uses: rharkor/caching-for-turbo@2238fae6eb9a9936f92356f54cb3660200d105e7 # v2.5.1
