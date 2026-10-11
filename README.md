@@ -22,7 +22,7 @@ A composite action that sets up the standard Kubb development environment:
 | Input | Description | Default |
 |-------|-------------|---------|
 | `node-version` | Node.js version to use (e.g., `22`, `24`, or `22.x`) | (required) |
-| `cache` | Cache/build tool: `turbo` or `moon` | `turbo` |
+| `cache` | Set to `false` to skip the Turbo cache | `turbo` |
 | `force-install` | Re-fetch dependencies with `pnpm install --frozen-lockfile --force` instead of `--prefer-offline` | `false` |
 
 #### Usage
@@ -55,23 +55,6 @@ jobs:
           node-version: '24.x'
 
       - run: pnpm build
-```
-
-##### Using moon instead of Turbo
-
-```yaml
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: kubb-labs/config/.github/setup@main
-        with:
-          node-version: '22'
-          cache: moon
-
-      - run: moon ci
 ```
 
 ### `.github/actions/release`

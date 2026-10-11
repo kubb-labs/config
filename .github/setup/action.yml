@@ -8,7 +8,7 @@ inputs:
     # We leave 'default' empty or omit it so the calling workflow
     # is forced to provide the version it actually needs.
   cache:
-    description: 'Cache/build tool to use: "turbo" (default) or "moon"'
+    description: 'Set to "false" to skip the Turbo cache.'
     required: false
     default: 'turbo'
   force-install:
@@ -79,9 +79,3 @@ runs:
       continue-on-error: true
       with:
         cache-prefix: kubb_
-
-    - name: Setup moon toolchain
-      if: ${{ inputs.cache == 'moon' }}
-      uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0.6.4
-      with:
-        auto-install: true
