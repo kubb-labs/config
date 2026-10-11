@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - '.github/actions/**'
+      - '.github/setup/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - '.github/workflows/test.yml'
