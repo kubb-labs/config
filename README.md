@@ -12,7 +12,7 @@ A composite action that sets up the standard Kubb development environment:
 - [pnpm](https://pnpm.io/) package manager
 - [Bun](https://bun.sh/) runtime
 - [Node.js](https://nodejs.org/)
-- [safe-chain](https://github.com/AikidoSec/safe-chain) supply-chain protection (blocks known-malicious packages, enforces a 72h minimum package age)
+- [safe-chain](https://github.com/AikidoSec/safe-chain) supply-chain protection (blocks known-malicious packages, enforces a 48h minimum package age)
 - Git user configuration
 - pnpm store cache
 - [Turbo](https://turbo.build/) remote cache
