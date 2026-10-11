@@ -1,13 +1,23 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
-import { packageHeadingPattern, versionHeadingPattern } from './format.mjs'
 
-// The custom changelog hook (internals/changelog/index.mjs, in the consuming
-// repo) writes one root CHANGELOG.md with a `## v<version>` heading per
-// release and a `### <name>` subsection per package inside it. This finds
-// that whole version block, the shared starting point for both a combined,
-// whole-version release and a single package's own subsection within it.
+function escapeForRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+// The lookahead after the version rejects a longer, hyphen-suffixed version
+// sharing the same numeric prefix (e.g. searching for "5.0.0" must not match
+// a "## v5.0.0-rc.1" heading), while still matching the exact version
+// followed by whitespace, a separator, or end of line.
+function versionHeadingPattern(version) {
+  return new RegExp(`^##\\s+v?${escapeForRegExp(version)}(?![\\w.-]).*$`, 'm')
+}
+
+// Returns the block under a `## v<version>` or `## <version>` heading, up to
+// the next `##` heading. Combined mode reads the root CHANGELOG.md that kubb's
+// internals/changelog hook writes (same heading format as its format.mjs).
+// Per-package mode reads each package's own CHANGELOG.md.
 export function extractVersionNotes({ changelog, version }) {
   const versionMatch = versionHeadingPattern(version).exec(changelog)
   if (!versionMatch) return null
@@ -15,23 +25,6 @@ export function extractVersionNotes({ changelog, version }) {
   const afterVersion = changelog.slice(versionMatch.index + versionMatch[0].length)
   const nextVersionHeading = /^##\s+/m.exec(afterVersion)
   return (nextVersionHeading ? afterVersion.slice(0, nextVersionHeading.index) : afterVersion).trim()
-}
-
-// Reproduces what changesets/action would normally show for one package,
-// sourced from the consuming repo's aggregated CHANGELOG.md instead of a
-// per-package changelog.
-export function extractPackageNotes({ changelog, name, version }) {
-  const versionBlock = extractVersionNotes({ changelog, version })
-  if (versionBlock === null) return null
-
-  const packageMatch = packageHeadingPattern(name).exec(versionBlock)
-  if (!packageMatch) return null
-
-  const afterPackage = versionBlock.slice(packageMatch.index + packageMatch[0].length)
-  const nextHeading = /^#{2,3}\s+/m.exec(afterPackage)
-  const packageBlock = nextHeading ? afterPackage.slice(0, nextHeading.index) : afterPackage
-
-  return packageBlock.trim() || null
 }
 
 function releaseExists(tag) {
