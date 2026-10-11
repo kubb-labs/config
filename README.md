@@ -66,8 +66,6 @@ A composite action that wraps `changesets/action` to version and stage-publish a
 | Input | Description | Default |
 |-------|-------------|---------|
 | `github-token` | Token for `changesets/action` (needs `contents: write`, `pull-requests: write`, `issues: write`) | (required) |
-| `commit-message` | Commit message for the version-bump commit | `ci(changesets): version packages` |
-| `title` | PR title for the version-bump PR | `ci(changesets): version packages` |
 | `version-script` | Command that bumps package versions, to run extra steps after `changeset version` | `pnpm exec changeset version` |
 
 #### Outputs
