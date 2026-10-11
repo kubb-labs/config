@@ -1,37 +1,20 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
-import { packageHeadingPattern, versionHeadingPattern } from './format.mjs'
 
-// The custom changelog hook (internals/changelog/index.mjs, in the consuming
-// repo) writes one root CHANGELOG.md with a `## v<version>` heading per
-// release and a `### <name>` subsection per package inside it. This finds
-// that whole version block, the shared starting point for both a combined,
-// whole-version release and a single package's own subsection within it.
+// Combined mode reads the root CHANGELOG.md that kubb's internals/changelog
+// hook writes (same heading format as its format.mjs). Per-package mode reads
+// each package's own CHANGELOG.md, whose headings have no `v` prefix.
 export function extractVersionNotes({ changelog, version }) {
-  const versionMatch = versionHeadingPattern(version).exec(changelog)
+  const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  // The lookahead rejects a longer, hyphen-suffixed version sharing the same
+  // numeric prefix (e.g. "5.0.0" must not match a "## v5.0.0-rc.1" heading).
+  const versionMatch = new RegExp(`^##\\s+v?${escaped}(?![\\w.-]).*$`, 'm').exec(changelog)
   if (!versionMatch) return null
 
   const afterVersion = changelog.slice(versionMatch.index + versionMatch[0].length)
   const nextVersionHeading = /^##\s+/m.exec(afterVersion)
   return (nextVersionHeading ? afterVersion.slice(0, nextVersionHeading.index) : afterVersion).trim()
-}
-
-// Reproduces what changesets/action would normally show for one package,
-// sourced from the consuming repo's aggregated CHANGELOG.md instead of a
-// per-package changelog.
-export function extractPackageNotes({ changelog, name, version }) {
-  const versionBlock = extractVersionNotes({ changelog, version })
-  if (versionBlock === null) return null
-
-  const packageMatch = packageHeadingPattern(name).exec(versionBlock)
-  if (!packageMatch) return null
-
-  const afterPackage = versionBlock.slice(packageMatch.index + packageMatch[0].length)
-  const nextHeading = /^#{2,3}\s+/m.exec(afterPackage)
-  const packageBlock = nextHeading ? afterPackage.slice(0, nextHeading.index) : afterPackage
-
-  return packageBlock.trim() || null
 }
 
 function releaseExists(tag) {
@@ -50,6 +33,10 @@ function createRelease({ tag, title, notes }) {
 
   const result = spawnSync('gh', ['release', 'create', tag, '--title', title, '--notes', notes], { stdio: 'inherit' })
   if (result.status !== 0) process.exit(result.status ?? 1)
+}
+
+function fallbackNotes(repo) {
+  return `Dependency update only, no direct changes for this package. See [CHANGELOG.md](https://github.com/${repo}/blob/main/CHANGELOG.md) for the full release notes.`
 }
 
 function getWorkspacePaths() {
@@ -72,7 +59,7 @@ function createPerPackageReleases({ staged, repo }) {
         notes = extractVersionNotes({ changelog: readFileSync(`${pkgPath}/CHANGELOG.md`, 'utf8'), version: pkg.version })
       } catch {}
     }
-    notes ??= `Dependency update only, no direct changes for this package. See [CHANGELOG.md](https://github.com/${repo}/blob/main/CHANGELOG.md) for the full release notes.`
+    notes ??= fallbackNotes(repo)
     createRelease({ tag: `${pkg.name}@${pkg.version}`, title: `${pkg.name}@${pkg.version}`, notes })
   }
 }
@@ -82,28 +69,21 @@ function createPerPackageReleases({ staged, repo }) {
 // second, parallel tagging scheme.
 function createCombinedRelease({ staged, changelog, repo }) {
   const flagship = staged.find((pkg) => pkg.name === 'kubb') ?? staged[0]
-  if (!flagship) return
-
-  const notes =
-    extractVersionNotes({ changelog, version: flagship.version }) ??
-    `Dependency update only, no direct changes for this package. See [CHANGELOG.md](https://github.com/${repo}/blob/main/CHANGELOG.md) for the full release notes.`
+  const notes = extractVersionNotes({ changelog, version: flagship.version }) ?? fallbackNotes(repo)
   createRelease({ tag: `${flagship.name}@${flagship.version}`, title: `v${flagship.version}`, notes })
 }
 
+// verifyRegistry.mjs runs first in the same action and fails on an empty
+// STAGED_PACKAGES, so this always gets at least one package.
 function main() {
-  const staged = JSON.parse(process.env.STAGED_PACKAGES || '[]')
-  if (staged.length === 0) {
-    console.error('STAGED_PACKAGES is empty. The promote job only runs when release staged something, so this should never happen.')
-    process.exit(1)
-  }
-
+  const staged = JSON.parse(process.env.STAGED_PACKAGES)
   const repo = process.env.GITHUB_REPOSITORY
 
   if (process.env.RELEASE_MODE === 'combined') {
     createCombinedRelease({ staged, changelog: readFileSync('CHANGELOG.md', 'utf8'), repo })
-  } else {
-    createPerPackageReleases({ staged, repo })
+    return
   }
+  createPerPackageReleases({ staged, repo })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

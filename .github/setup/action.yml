@@ -3,12 +3,11 @@ description: Action that sets up Node, pnpm, and caching with support for Node 2
 
 inputs:
   node-version:
-    description: 'Node.js version to use (e.g., 22, 24, or 22.x)'
-    required: true
-    # We leave 'default' empty or omit it so the calling workflow
-    # is forced to provide the version it actually needs.
+    description: 'Node.js version to use (e.g., 22, 24, or 22.x). Defaults to 22.22.3.'
+    required: false
+    default: '22.22.3'
   cache:
-    description: 'Cache/build tool to use: "turbo" (default) or "moon"'
+    description: 'Set to "false" to skip the Turbo cache.'
     required: false
     default: 'turbo'
   force-install:
@@ -61,27 +60,14 @@ runs:
         git config --global user.email "stijn@stijnvanhulle.be"
         git config --global user.name "Stijn Van Hulle"
 
+    # The expression yields one of two fixed flags, so input text never reaches the shell.
     - name: Install dependencies
       shell: bash
-      # Read from env to keep the input out of the shell command.
-      env:
-        FORCE_INSTALL: ${{ inputs.force-install }}
-      run: |
-        if [ "$FORCE_INSTALL" = 'true' ]; then
-          pnpm install --frozen-lockfile --force
-        else
-          pnpm install --frozen-lockfile --prefer-offline
-        fi
-      
+      run: pnpm install --frozen-lockfile ${{ inputs.force-install == 'true' && '--force' || '--prefer-offline' }}
+
     - name: Setup Turbo cache
       if: ${{ inputs.cache == 'turbo' }}
       uses: rharkor/caching-for-turbo@2238fae6eb9a9936f92356f54cb3660200d105e7 # v2.5.1
       continue-on-error: true
       with:
         cache-prefix: kubb_
-
-    - name: Setup moon toolchain
-      if: ${{ inputs.cache == 'moon' }}
-      uses: moonrepo/setup-toolchain@261c62cb5b0f580c7be7c8cd0f023a2e96756095 # v0.6.4
-      with:
-        auto-install: true
