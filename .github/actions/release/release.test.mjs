@@ -44,8 +44,23 @@ describe('findOidcSkip', () => {
 })
 
 describe('parseStaged', () => {
+  // pnpm pretty-prints its --json payload.
+  const pretty = (value) => JSON.stringify(value, null, 2)
+
+  it('returns name/version pairs from the object pnpm keys by package name', () => {
+    const output = pretty({
+      '@kubb/core': { id: '@kubb/core@5.0.0-beta.81', name: '@kubb/core', version: '5.0.0-beta.81' },
+      kubb: { id: 'kubb@5.0.0-beta.81', name: 'kubb', version: '5.0.0-beta.81' },
+    })
+
+    expect(parseStaged(output)).toStrictEqual([
+      { name: '@kubb/core', version: '5.0.0-beta.81' },
+      { name: 'kubb', version: '5.0.0-beta.81' },
+    ])
+  })
+
   it('returns name/version pairs from a JSON array payload', () => {
-    const output = JSON.stringify([
+    const output = pretty([
       { name: '@kubb/core', version: '5.0.0-beta.81' },
       { name: 'kubb', version: '5.0.0-beta.81' },
     ])
@@ -57,49 +72,27 @@ describe('parseStaged', () => {
   })
 
   it('drops JSON entries missing a name or version', () => {
-    const output = JSON.stringify([{ name: '@kubb/core', version: '5.0.0-beta.81' }, { name: 'kubb' }, { version: '1.0.0' }])
+    const output = pretty([{ name: '@kubb/core', version: '5.0.0-beta.81' }, { name: 'kubb' }, { version: '1.0.0' }])
 
     expect(parseStaged(output)).toStrictEqual([{ name: '@kubb/core', version: '5.0.0-beta.81' }])
   })
 
-  it('returns name/version pairs from a JSON object keyed by package name', () => {
-    const output = JSON.stringify({
-      '@kubb/core': { name: '@kubb/core', version: '5.0.0-beta.81' },
-      kubb: { name: 'kubb', version: '5.0.0-beta.81' },
-    })
-
-    expect(parseStaged(output)).toStrictEqual([
-      { name: '@kubb/core', version: '5.0.0-beta.81' },
-      { name: 'kubb', version: '5.0.0-beta.81' },
-    ])
-  })
-
-  it('falls back to the object key as the name when an entry has neither a name nor a packageName field', () => {
-    const output = JSON.stringify({ '@kubb/core': { version: '5.0.0-beta.81' } })
-
-    expect(parseStaged(output)).toStrictEqual([{ name: '@kubb/core', version: '5.0.0-beta.81' }])
-  })
-
-  it('falls back to scanning `+ <name>@<version>` lines when the payload is not JSON', () => {
-    const output = ['Packages: +2', '+ @kubb/core@5.0.0-beta.81', '+ kubb@5.0.0-beta.81', 'Done'].join('\n')
-
-    expect(parseStaged(output)).toStrictEqual([
-      { name: '@kubb/core', version: '5.0.0-beta.81' },
-      { name: 'kubb', version: '5.0.0-beta.81' },
-    ])
-  })
-
-  it('returns an empty array when nothing was staged', () => {
-    expect(parseStaged('No packages to publish')).toStrictEqual([])
-  })
-
-  it('ignores banner lines that share stdout with the JSON payload', () => {
-    const json = JSON.stringify({
-      '@kubb/core': { name: '@kubb/core', version: '5.0.0' },
-      kubb: { name: 'kubb', version: '5.0.0' },
-    })
+  it('skips the progress lines pnpm prints before the JSON payload', () => {
     const output = [
-      json,
+      '📦 @kubb/core@5.0.0 → https://registry.npmjs.org/',
+      '[WARN] Skip staging @kubb/core@5.0.0 (dry run)',
+      pretty({ '@kubb/core': { name: '@kubb/core', version: '5.0.0' } }),
+    ].join('\n')
+
+    expect(parseStaged(output)).toStrictEqual([{ name: '@kubb/core', version: '5.0.0' }])
+  })
+
+  it('ignores notice lines that follow the JSON payload', () => {
+    const output = [
+      pretty({
+        '@kubb/core': { name: '@kubb/core', version: '5.0.0' },
+        kubb: { name: 'kubb', version: '5.0.0' },
+      }),
       'ℹ Safe-chain: Some package versions were suppressed during package metadata resolution due to minimum package age.',
       '[WARN] Failed to replace env in config: ${NODE_AUTH_TOKEN}',
     ].join('\n')
@@ -108,5 +101,21 @@ describe('parseStaged', () => {
       { name: '@kubb/core', version: '5.0.0' },
       { name: 'kubb', version: '5.0.0' },
     ])
+  })
+
+  it('reads past a closing brace inside a packed file path', () => {
+    const output = pretty({
+      '@kubb/core': { name: '@kubb/core', version: '5.0.0', files: [{ path: 'dist/[...slug}].js' }] },
+      kubb: { name: 'kubb', version: '5.0.0', files: [{ path: 'package.json' }] },
+    })
+
+    expect(parseStaged(output)).toStrictEqual([
+      { name: '@kubb/core', version: '5.0.0' },
+      { name: 'kubb', version: '5.0.0' },
+    ])
+  })
+
+  it('returns an empty array when nothing was staged', () => {
+    expect(parseStaged('No packages to publish')).toStrictEqual([])
   })
 })

@@ -21,31 +21,6 @@ function readPreTag() {
   }
 }
 
-// Parse pnpm stage publish output into [{ name, version }]. Prefers the --json
-// payload, in whichever shape it comes in (a bare array, or an object keyed by
-// package name, both observed across pnpm/npm staged-publish responses), then
-// falls back to scanning text output for `+ <name>@<version>` lines.
-// pnpm's --json payload can be preceded or followed by unrelated banner lines (safe-chain
-// notices, npm config warnings like "${NODE_AUTH_TOKEN}") sharing the same stdout stream. A
-// naive first/last bracket slice breaks on stray braces in that banner text, so walk the
-// bracket balance from the first `{`/`[` to find where the JSON value actually closes.
-function extractJson(output) {
-  const start = output.search(/[[{]/)
-  if (start === -1) return output
-
-  const open = output[start]
-  const close = open === '{' ? '}' : ']'
-  let depth = 0
-  for (let i = start; i < output.length; i++) {
-    if (output[i] === open) depth++
-    else if (output[i] === close) {
-      depth--
-      if (depth === 0) return output.slice(start, i + 1)
-    }
-  }
-  return output
-}
-
 // pnpm warns `Skipped OIDC: <reason>` when it cannot trade the GitHub id token
 // for an npm auth token, then falls back to whatever static credentials it can
 // find. This pipeline has none on purpose, so that fallback publishes
@@ -56,26 +31,23 @@ export function findOidcSkip(output) {
   return match ? match[1].trim() : null
 }
 
+// Parse `pnpm stage publish --json` output into [{ name, version }]. pnpm
+// prints progress lines (`📦 <name>@<version> → <registry>`, `[WARN] ...`)
+// before the payload, and safe-chain or npm config notices can follow it. The
+// payload is pretty-printed, so its outer brackets are the only ones alone on
+// a line. pnpm prints an object keyed by package name; Object.values also
+// takes a bare array.
 export function parseStaged(output) {
+  const json = output.match(/^\{$[\s\S]*^\}$|^\[$[\s\S]*^\]$/m)?.[0]
+  if (!json) return []
+
   try {
-    const parsed = JSON.parse(extractJson(output))
-    const entries = Array.isArray(parsed)
-      ? parsed
-      : parsed && typeof parsed === 'object'
-        ? Object.entries(parsed).map(([key, value]) => ({ name: value?.name ?? value?.packageName ?? key, version: value?.version }))
-        : null
-
-    if (entries) {
-      return entries.filter((entry) => entry?.name && entry?.version).map((entry) => ({ name: entry.name, version: entry.version }))
-    }
-  } catch {}
-
-  const found = []
-  for (const line of output.split('\n')) {
-    const match = line.match(/^\+\s+(@?[^\s@]+)@(\S+)/)
-    if (match) found.push({ name: match[1], version: match[2] })
+    return Object.values(JSON.parse(json))
+      .filter((entry) => entry?.name && entry?.version)
+      .map(({ name, version }) => ({ name, version }))
+  } catch {
+    return []
   }
-  return found
 }
 
 function main() {
