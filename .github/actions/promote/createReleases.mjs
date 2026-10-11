@@ -45,6 +45,10 @@ function createRelease({ tag, title, notes }) {
   if (result.status !== 0) process.exit(result.status ?? 1)
 }
 
+function fallbackNotes(repo) {
+  return `Dependency update only, no direct changes for this package. See [CHANGELOG.md](https://github.com/${repo}/blob/main/CHANGELOG.md) for the full release notes.`
+}
+
 function getWorkspacePaths() {
   const result = spawnSync('pnpm', ['ls', '-r', '--json', '--depth', '0'], { encoding: 'utf8' })
   if (result.status !== 0) return {}
@@ -65,7 +69,7 @@ function createPerPackageReleases({ staged, repo }) {
         notes = extractVersionNotes({ changelog: readFileSync(`${pkgPath}/CHANGELOG.md`, 'utf8'), version: pkg.version })
       } catch {}
     }
-    notes ??= `Dependency update only, no direct changes for this package. See [CHANGELOG.md](https://github.com/${repo}/blob/main/CHANGELOG.md) for the full release notes.`
+    notes ??= fallbackNotes(repo)
     createRelease({ tag: `${pkg.name}@${pkg.version}`, title: `${pkg.name}@${pkg.version}`, notes })
   }
 }
@@ -75,21 +79,14 @@ function createPerPackageReleases({ staged, repo }) {
 // second, parallel tagging scheme.
 function createCombinedRelease({ staged, changelog, repo }) {
   const flagship = staged.find((pkg) => pkg.name === 'kubb') ?? staged[0]
-  if (!flagship) return
-
-  const notes =
-    extractVersionNotes({ changelog, version: flagship.version }) ??
-    `Dependency update only, no direct changes for this package. See [CHANGELOG.md](https://github.com/${repo}/blob/main/CHANGELOG.md) for the full release notes.`
+  const notes = extractVersionNotes({ changelog, version: flagship.version }) ?? fallbackNotes(repo)
   createRelease({ tag: `${flagship.name}@${flagship.version}`, title: `v${flagship.version}`, notes })
 }
 
+// verifyRegistry.mjs runs first in the same action and fails on an empty
+// STAGED_PACKAGES, so this always gets at least one package.
 function main() {
-  const staged = JSON.parse(process.env.STAGED_PACKAGES || '[]')
-  if (staged.length === 0) {
-    console.error('STAGED_PACKAGES is empty. The promote job only runs when release staged something, so this should never happen.')
-    process.exit(1)
-  }
-
+  const staged = JSON.parse(process.env.STAGED_PACKAGES)
   const repo = process.env.GITHUB_REPOSITORY
 
   if (process.env.RELEASE_MODE === 'combined') {
