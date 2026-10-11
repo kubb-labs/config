@@ -3,10 +3,9 @@ description: Action that sets up Node, pnpm, and caching with support for Node 2
 
 inputs:
   node-version:
-    description: 'Node.js version to use (e.g., 22, 24, or 22.x)'
-    required: true
-    # We leave 'default' empty or omit it so the calling workflow
-    # is forced to provide the version it actually needs.
+    description: 'Node.js version to use (e.g., 22, 24, or 22.x). Defaults to 22.22.3.'
+    required: false
+    default: '22.22.3'
   cache:
     description: 'Set to "false" to skip the Turbo cache.'
     required: false

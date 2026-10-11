@@ -21,7 +21,7 @@ A composite action that sets up the standard Kubb development environment:
 
 | Input | Description | Default |
 |-------|-------------|---------|
-| `node-version` | Node.js version to use (e.g., `22`, `24`, or `22.x`) | (required) |
+| `node-version` | Node.js version to use (e.g., `22`, `24`, or `22.x`) | `22.22.3` |
 | `cache` | Set to `false` to skip the Turbo cache | `turbo` |
 | `force-install` | Re-fetch dependencies with `pnpm install --frozen-lockfile --force` instead of `--prefer-offline` | `false` |
 
@@ -35,8 +35,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: kubb-labs/config/.github/setup@main
-        with:
-          node-version: '22'
 
       - run: pnpm build
 ```
@@ -95,8 +93,6 @@ jobs:
           fetch-depth: 0
 
       - uses: kubb-labs/config/.github/setup@main
-        with:
-          node-version: '22'
 
       - name: Release
         id: release
@@ -157,8 +153,6 @@ jobs:
           fetch-depth: 0
 
       - uses: kubb-labs/config/.github/setup@main
-        with:
-          node-version: '22'
 
       - name: Promote
         id: promote
