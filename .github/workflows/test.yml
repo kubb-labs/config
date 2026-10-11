@@ -6,7 +6,6 @@ on:
       - '.github/actions/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
-      - 'vitest.config.ts'
       - '.github/workflows/test.yml'
 
 permissions: {}
