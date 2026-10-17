@@ -1,3 +1,9 @@
+<div align="center">
+  <a href="https://kubb.dev" target="_blank" rel="noopener noreferrer">
+    <img src="https://kubb.dev/og.png" alt="Kubb banner">
+  </a>
+</div>
+
 # kubb-labs/config
 
 Shared configuration and reusable GitHub Actions for [Kubb](https://github.com/kubb-labs/kubb) packages.
