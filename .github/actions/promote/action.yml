@@ -1,12 +1,12 @@
 name: 'Promote'
-description: 'Verifies staged package versions are live on npm, tags the release, and creates GitHub Releases.'
+description: 'Verifies staged package versions are live on npm, tags the release, creates GitHub Releases, and comments on the issues and PRs each release ships.'
 
 inputs:
   staged-packages:
     description: 'JSON array of {name, version} staged by the release action.'
     required: true
   github-token:
-    description: 'Token for `gh release create` (contents: write).'
+    description: 'Token for `gh release create` (contents: write) and release comments on issues and PRs (issues: write, pull-requests: write).'
     required: true
   release-mode:
     description: "'combined' for one release per version (fixed/linked packages), unset/'per-package' otherwise."
@@ -41,6 +41,14 @@ runs:
     - name: Create GitHub Releases
       shell: bash
       run: node ${{ github.action_path }}/createReleases.mjs
+      env:
+        STAGED_PACKAGES: ${{ inputs.staged-packages }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        RELEASE_MODE: ${{ inputs.release-mode }}
+
+    - name: Comment on released issues and PRs
+      shell: bash
+      run: node ${{ github.action_path }}/commentOnIssues.mjs
       env:
         STAGED_PACKAGES: ${{ inputs.staged-packages }}
         GH_TOKEN: ${{ inputs.github-token }}

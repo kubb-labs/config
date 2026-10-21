@@ -123,14 +123,14 @@ Known pnpm constraint: `pnpm stage publish` cannot complete the exchange on pnpm
 
 ### `.github/actions/promote`
 
-A composite action that verifies staged package versions are live on npm, tags the release, and creates GitHub Releases, using bundled `verifyRegistry.mjs` and `createReleases.mjs`. Runs after a maintainer approves the staged versions on npm and the environment review for the job calling this action.
+A composite action that verifies staged package versions are live on npm, tags the release, creates GitHub Releases, and comments `Released in …` on every PR in the release and every issue those PRs close, using bundled `verifyRegistry.mjs`, `createReleases.mjs` and `commentOnIssues.mjs`. Runs after a maintainer approves the staged versions on npm and the environment review for the job calling this action.
 
 #### Inputs
 
 | Input | Description | Default |
 |-------|-------------|---------|
 | `staged-packages` | JSON array of `{name, version}` staged by `.github/actions/release` | (required) |
-| `github-token` | Token for `gh release create` (`contents: write`) | (required) |
+| `github-token` | Token for `gh release create` (`contents: write`) and the release comments (`issues: write`, `pull-requests: write`) | (required) |
 | `release-mode` | `combined` for one release per version (fixed/linked packages), unset/`per-package` otherwise | (empty, i.e. per-package) |
 
 #### Outputs
@@ -151,6 +151,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
+      pull-requests: write
     outputs:
       approved: ${{ steps.promote.outputs.approved }}
     steps:
