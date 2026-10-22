@@ -27,7 +27,7 @@ A composite action that sets up the standard Kubb development environment:
 
 | Input | Description | Default |
 |-------|-------------|---------|
-| `node-version` | Node.js version to use (e.g., `22`, `24`, or `22.x`) | `22.22.3` |
+| `node-version` | Node.js version to use (e.g., `22`, `24`, or `22.x`) | `22.23.4` |
 | `cache` | Set to `false` to skip the Turbo cache | `turbo` |
 | `force-install` | Re-fetch dependencies with `pnpm install --frozen-lockfile --force` instead of `--prefer-offline` | `false` |
 
