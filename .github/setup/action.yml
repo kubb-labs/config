@@ -22,7 +22,7 @@ runs:
     # Supported on GitHub-hosted Linux runners only.
     - name: Harden runner
       if: runner.os == 'Linux'
-      uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+      uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
       with:
         egress-policy: audit
 
@@ -67,7 +67,7 @@ runs:
 
     - name: Setup Turbo cache
       if: ${{ inputs.cache == 'turbo' }}
-      uses: rharkor/caching-for-turbo@2238fae6eb9a9936f92356f54cb3660200d105e7 # v2.5.1
+      uses: rharkor/caching-for-turbo@760158c05c47e7a764f78e9a22ca3b5a6ed8c52e # v2.5.2
       continue-on-error: true
       with:
         cache-prefix: kubb_
