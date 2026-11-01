@@ -4,6 +4,9 @@
   </a>
 </div>
 
+> [!IMPORTANT]
+> **We are looking for maintainers.** Want to help shape Kubb? Email [kubb@kubb.dev](mailto:kubb@kubb.dev) or chat with us on [Discord](https://discord.gg/shfBFeczrm).
+
 # kubb-labs/config
 
 Shared configuration and reusable GitHub Actions for [Kubb](https://github.com/kubb-labs/kubb) packages.
