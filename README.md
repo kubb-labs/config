@@ -171,6 +171,22 @@ jobs:
           release-mode: combined
 ```
 
+## Locking action versions
+
+This repository references actions by tag and records the exact commit of each one in
+[`.github/workflows/actions.lock`](./.github/workflows/actions.lock), so a moved tag cannot change
+what runs. The `Verify lockfile` workflow fails when the lockfile is out of date.
+
+After you add a workflow or change a `uses:` line, update the lockfile:
+
+```sh
+gh extension install github/gh-actions-lock
+gh actions-lock
+```
+
+Repositories that use `kubb-labs/config/.github/setup@main` can lock it the same way, so `main`
+stays on a reviewed commit until they run `gh actions-lock --relock`.
+
 ## License
 
 [MIT](./LICENSE)
