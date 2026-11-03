@@ -22,15 +22,15 @@ runs:
     # Supported on GitHub-hosted Linux runners only.
     - name: Harden runner
       if: runner.os == 'Linux'
-      uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+      uses: step-security/harden-runner@v2.22.2
       with:
         egress-policy: audit
 
     - name: Setup pnpm
-      uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      uses: pnpm/action-setup@v6.1.0
 
     - name: Install bun
-      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      uses: oven-sh/setup-bun@v2.2.0
 
     # No registry-url on purpose. It makes setup-node write an .npmrc holding
     # `//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}` and point
@@ -39,7 +39,7 @@ runs:
     # publishing is skipped in favor of an empty token (401). Each repo's own
     # .npmrc already sets the registry.
     - name: Setup Node.js environment
-      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      uses: actions/setup-node@v7.1.0
       with:
         node-version: ${{ inputs.node-version }}
         cache: 'pnpm'
@@ -67,7 +67,7 @@ runs:
 
     - name: Setup Turbo cache
       if: ${{ inputs.cache == 'turbo' }}
-      uses: rharkor/caching-for-turbo@760158c05c47e7a764f78e9a22ca3b5a6ed8c52e # v2.5.2
+      uses: rharkor/caching-for-turbo@v2.5.2
       continue-on-error: true
       with:
         cache-prefix: kubb_
