@@ -44,7 +44,10 @@ runs:
         node-version: ${{ inputs.node-version }}
         cache: 'pnpm'
 
+    # A failed download or install must not block the job. pnpm's own
+    # minimumReleaseAge in pnpm-workspace.yaml still applies without it.
     - name: Install safe-chain
+      continue-on-error: true
       shell: bash
       run: |
         curl -fsSL https://github.com/AikidoSec/safe-chain/releases/download/1.5.20/install-safe-chain.sh -o /tmp/install-safe-chain.sh
